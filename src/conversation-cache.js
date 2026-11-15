@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { gzip, gunzip } from "node:zlib";
 import { promisify } from "node:util";
@@ -68,6 +68,10 @@ export function createConversationCache({
     cache.context = context;
     const data = Buffer.from(`${JSON.stringify(cache)}\n`, "utf8");
     await writeFile(await fileFor(messageId), await gzipAsync(data));
+    const key = createHash("sha256").update(String(messageId)).digest("hex");
+    await unlink(join(directory, `${key}.json`)).catch((error) => {
+      if (error.code !== "ENOENT") throw error;
+    });
     return cache;
   }
 
