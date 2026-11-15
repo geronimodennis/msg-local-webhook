@@ -70,17 +70,33 @@ export function createWatcher({
       let cache;
       if (config.replyMode === "chatbot") {
         const previousMessages = await readConversationMessages(page, config.chatbotContextMessages);
-        cache = await conversationCache.update(candidate.id, [
-          ...previousMessages.map((content, index) => ({
-            key: `context:${index}:${content}`,
-            role: "conversation",
-            content
-          })),
-          { key: `incoming:${candidate.id}`, role: "incoming", content: message.text }
-        ]);
+        try {
+          cache = await conversationCache.update(candidate.id, {
+            threadName: candidate.threadName,
+            exchanges: [
+              ...previousMessages.map((content, index) => ({
+                key: `context:${index}:${content}`,
+                role: "conversation",
+                content
+              })),
+              { key: `incoming:${candidate.id}`, role: "incoming", content: message.text }
+            ]
+          });
+        } catch (error) {
+          logger.error(`[watcher] conversation cache failed; using live context: ${error.message}`);
+          cache = { context: previousMessages.join("\n") };
+        }
         if (!config.dryRun) await showTyping(page, config.composerSelector);
         try {
-          replyBody = await generateReply({ ...message, conversationContext: cache.context }, config);
+          replyBody = await generateReply(
+            { ...message, conversationContext: cache.context },
+            config,
+            fetch,
+            {
+              rescanConversation: async (messageCount) =>
+                (await readConversationMessages(page, messageCount)).join("\n")
+            }
+          );
         } catch (error) {
           logger.error(`[watcher] chatbot failed; using fallback reply: ${error.message}`);
           replyBody = config.chatbotFallbackText;
@@ -93,11 +109,18 @@ export function createWatcher({
         await sendReply(page, text, config.composerSelector);
         stateStore.markReplied(candidate.id, currentTime);
         if (cache) {
-          await conversationCache.update(candidate.id, [{
-            key: `assistant:${currentTime}`,
-            role: "assistant",
-            content: text
-          }]);
+          try {
+            await conversationCache.update(candidate.id, {
+              threadName: candidate.threadName,
+              exchanges: [{
+                key: `assistant:${currentTime}`,
+                role: "assistant",
+                content: text
+              }]
+            });
+          } catch (error) {
+            logger.error(`[watcher] assistant cache update failed: ${error.message}`);
+          }
         }
         replied++;
       }

@@ -26,10 +26,27 @@ const webTools = [
         required: ["url"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "rescan_conversation",
+      description: "Rescan the currently open Messenger conversation for newer or missing messages.",
+      parameters: {
+        type: "object",
+        properties: {
+          message_count: {
+            type: "integer",
+            description: "Number of newest conversation messages to return."
+          }
+        },
+        required: []
+      }
+    }
   }
 ];
 
-export async function generateReply(message, config, fetchImpl = fetch) {
+export async function generateReply(message, config, fetchImpl = fetch, tools = {}) {
   if (!config.chatbotApiUrl) {
     throw new Error("CHATBOT_API_URL is required when REPLY_MODE=chatbot.");
   }
@@ -50,7 +67,10 @@ export async function generateReply(message, config, fetchImpl = fetch) {
     { role: "system", content: config.chatbotSystemPrompt },
     { role: "user", content: currentMessage }
   ];
-  const maxCalls = config.chatbotWebAccess ? (config.chatbotWebMaxCalls || 3) : 0;
+  const enabledTools = config.chatbotWebAccess
+    ? webTools
+    : webTools.filter((tool) => tool.function.name === "rescan_conversation");
+  const maxCalls = config.chatbotWebAccess ? (config.chatbotWebMaxCalls || 3) : 1;
   let calls = 0;
 
   while (true) {
@@ -64,7 +84,7 @@ export async function generateReply(message, config, fetchImpl = fetch) {
         model: config.chatbotModel,
         messages,
         temperature: config.chatbotTemperature,
-        ...(config.chatbotWebAccess ? { tools: webTools } : {})
+        tools: enabledTools
       })
     });
 
@@ -93,7 +113,7 @@ export async function generateReply(message, config, fetchImpl = fetch) {
       } catch {
         args = {};
       }
-      const result = await executeWebTool(name, args, config);
+      const result = await executeWebTool(name, args, config, tools);
       messages.push({
         role: "tool",
         tool_call_id: toolCall.id,
@@ -129,9 +149,13 @@ export async function summarizeConversation(context, config, fetchImpl = fetch) 
   return content;
 }
 
-async function executeWebTool(name, args, config) {
+async function executeWebTool(name, args, config, tools) {
   if (name === "web_search") return searchWeb(args.query, config.chatbotWebMaxChars);
   if (name === "fetch_url") return fetchUrl(args.url, config.chatbotWebMaxChars);
+  if (name === "rescan_conversation") {
+    if (!tools.rescanConversation) return "Conversation rescan is unavailable.";
+    return tools.rescanConversation(args.message_count || config.chatbotContextMessages);
+  }
   return `Unknown tool: ${name}`;
 }
 

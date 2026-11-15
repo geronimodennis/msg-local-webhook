@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { gzip, gunzip } from "node:zlib";
 import { promisify } from "node:util";
@@ -36,8 +36,12 @@ export function createConversationCache({
     }
   }
 
-  async function update(messageId, exchanges) {
+  async function update(messageId, input) {
+    const { threadName = "", exchanges = input } = Array.isArray(input)
+      ? { exchanges: input }
+      : input;
     const cache = await read(messageId);
+    cache.threadName ||= threadName;
     const known = new Set(cache.exchanges.map((exchange) => exchange.key));
 
     for (const exchange of exchanges) {
@@ -52,7 +56,19 @@ export function createConversationCache({
       known.add(key);
     }
 
-    let context = formatExchanges(cache.exchanges);
+    let context;
+    if (threadName) {
+      const merged = new Map();
+      for (const entry of await readThread(threadName)) {
+        for (const exchange of entry.cache.exchanges) merged.set(exchange.key, exchange);
+      }
+      for (const exchange of cache.exchanges) merged.set(exchange.key, exchange);
+      context = formatExchanges([...merged.values()].sort((a, b) =>
+        String(a.timestamp).localeCompare(String(b.timestamp))
+      ));
+    } else {
+      context = formatExchanges(cache.exchanges);
+    }
     if (context.length > maxChars) {
       const summary = await summarize(context);
       cache.exchanges = [{
@@ -62,20 +78,53 @@ export function createConversationCache({
         timestamp: new Date().toISOString()
       }];
       context = formatExchanges(cache.exchanges);
+      cache.context = context;
+      cache.threadName = threadName;
+      await writeCache(messageId, cache);
+      for (const entry of await readThread(threadName)) {
+        if (entry.path !== await fileFor(messageId)) await unlink(entry.path).catch(() => {});
+      }
+      return cache;
     }
 
     cache.updatedAt = new Date().toISOString();
     cache.context = context;
+    await writeCache(messageId, cache);
+    return cache;
+  }
+
+  async function readThread(threadName) {
+    await mkdir(directory, { recursive: true });
+    const files = (await readdir(directory))
+      .filter((file) => file.endsWith(".json.gz") || file.endsWith(".json"));
+    const entries = [];
+    for (const file of files) {
+      const path = join(directory, file);
+      try {
+        const cache = file.endsWith(".gz")
+          ? JSON.parse((await gunzipAsync(await readFile(path))).toString("utf8"))
+          : JSON.parse(await readFile(path, "utf8"));
+        if (cache.threadName === threadName || cache.messageId?.startsWith(`${threadName}|`)) {
+          entries.push({ path, cache });
+        }
+      } catch {
+        // Ignore incomplete or unrelated cache files.
+      }
+    }
+    return entries;
+  }
+
+  async function writeCache(messageId, cache) {
+    const target = await fileFor(messageId);
     const data = Buffer.from(`${JSON.stringify(cache)}\n`, "utf8");
-    await writeFile(await fileFor(messageId), await gzipAsync(data));
+    await writeFile(target, await gzipAsync(data));
     const key = createHash("sha256").update(String(messageId)).digest("hex");
     await unlink(join(directory, `${key}.json`)).catch((error) => {
       if (error.code !== "ENOENT") throw error;
     });
-    return cache;
   }
 
-  return { read, update };
+  return { read, update, readThread };
 }
 
 function formatExchanges(exchanges) {
