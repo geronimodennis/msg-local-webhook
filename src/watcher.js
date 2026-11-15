@@ -22,6 +22,7 @@ export function createWatcher({
   conversationCache = createConversationCache({
     directory: config.chatbotCacheDirectory,
     maxChars: config.chatbotCacheMaxChars,
+    compression: config.chatbotCacheCompression,
     summarize: (context) => summarizeConversation(context, config)
   })
 }) {

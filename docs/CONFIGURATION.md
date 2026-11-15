@@ -31,6 +31,7 @@ Copy `.env.example` to `.env` and edit the values below. The watcher reloads the
 | `CHATBOT_CONTEXT_MESSAGES` | Positive integer; defaults to `1` when unset | Number of newest previous conversation messages sent to the chatbot. |
 | `CHATBOT_CACHE_DIRECTORY` | Relative or absolute directory | Location of per-message chatbot cache files; default `.cache`. |
 | `CHATBOT_CACHE_MAX_CHARS` | Positive number | Cache size threshold that triggers summarization and replacement. |
+| `CHATBOT_CACHE_COMPRESSION` | `true` or `false` | Enables gzip cache files; `false` writes readable JSON files. |
 | `CHATBOT_RESCAN_DUMP_DIRECTORY` | Relative or absolute directory | Directory for readable text dumps of each conversation rescan. |
 | `CHATBOT_WEB_ACCESS` | `true` or `false` | Enables the chatbot's `web_search` and `fetch_url` tools; default `false`. |
 | `CHATBOT_WEB_MAX_CHARS` | Positive number | Maximum characters returned from each web tool; default `8000`. |
@@ -48,7 +49,7 @@ Group messages are eligible only when the mention matches the detected account n
 
 ## Conversation cache
 
-Each incoming message gets a compressed gzip cache file in `.cache/`. The cache stores the newest conversation exchanges and the assistant's confirmed replies. `CHATBOT_CONTEXT_MESSAGES` controls how many recent Messenger messages are added on each response. When the cache exceeds `CHATBOT_CACHE_MAX_CHARS`, the chatbot summarizes the conversation while preserving important facts, questions, commitments, dates, and chronological meaning, then replaces the oversized cache with that summary. Older uncompressed `.json` cache files remain readable.
+Each incoming message gets a cache file in `.cache/`. With compression disabled, the cache is readable JSON. The cache stores the newest conversation exchanges and the assistant's confirmed replies. `CHATBOT_CONTEXT_MESSAGES` controls how many recent Messenger messages are added on each response. When the cache exceeds `CHATBOT_CACHE_MAX_CHARS`, the chatbot summarizes the conversation while preserving important facts, questions, commitments, dates, and chronological meaning, then replaces the oversized cache. Both JSON and gzip cache files remain readable.
 
 ## Deep conversation scanning
 

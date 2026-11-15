@@ -10,12 +10,13 @@ const gunzipAsync = promisify(gunzip);
 export function createConversationCache({
   directory = ".cache",
   maxChars = 12_000,
+  compression = true,
   summarize = async (context) => context
 } = {}) {
-  async function fileFor(messageId) {
+  async function fileFor(messageId, compressed = compression) {
     await mkdir(directory, { recursive: true });
     const key = createHash("sha256").update(String(messageId)).digest("hex");
-    return join(directory, `${key}.json.gz`);
+    return join(directory, `${key}.json${compressed ? ".gz" : ""}`);
   }
 
   async function read(messageId) {
@@ -24,9 +25,8 @@ export function createConversationCache({
       return JSON.parse((await gunzipAsync(compressed)).toString("utf8"));
     } catch (error) {
       if (error.code === "ENOENT") {
-        const key = createHash("sha256").update(String(messageId)).digest("hex");
         try {
-          return JSON.parse(await readFile(join(directory, `${key}.json`), "utf8"));
+          return JSON.parse(await readFile(await fileFor(messageId, false), "utf8"));
         } catch (legacyError) {
           if (legacyError.code === "ENOENT") return { messageId, exchanges: [] };
           throw legacyError;
@@ -115,11 +115,11 @@ export function createConversationCache({
   }
 
   async function writeCache(messageId, cache) {
-    const target = await fileFor(messageId);
+    const target = await fileFor(messageId, compression);
     const data = Buffer.from(`${JSON.stringify(cache)}\n`, "utf8");
-    await writeFile(target, await gzipAsync(data));
+    await writeFile(target, compression ? await gzipAsync(data) : data);
     const key = createHash("sha256").update(String(messageId)).digest("hex");
-    await unlink(join(directory, `${key}.json`)).catch((error) => {
+    await unlink(join(directory, `${key}.${compression ? "json" : "json.gz"}`)).catch((error) => {
       if (error.code !== "ENOENT") throw error;
     });
   }
