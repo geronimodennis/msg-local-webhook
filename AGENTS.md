@@ -1,6 +1,7 @@
 # Agent Instructions
 
 - This is a local browser watcher for Facebook Messenger, not a Meta webhook/API integration. It attaches to an already logged-in Chrome instance over CDP (`127.0.0.1:9222`).
+- The project purpose is to simulate a webhook locally through a browser first, with a future expansion path for additional messaging apps. The user-facing CLI is `localwebhook --for messenger --start`.
 - The watcher is intentionally run manually in a terminal; do not add a process manager or hosted-service assumption.
 - Setup and all `.env` properties are documented in `README.md` and `docs/CONFIGURATION.md`; keep those docs synchronized with configuration changes.
 - Idle timing is configurable with `IDLE_VALUE` plus `IDLE_UNIT` (`seconds` or `minutes`); the intended default is 5 minutes since the message was not seen.

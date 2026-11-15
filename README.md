@@ -27,19 +27,19 @@ npm.cmd start
 
 Keep `DRY_RUN=true` for the first test. Set `DRY_RUN=false` only after confirming detection works.
 
-## Install from npm
+## Install and run from npm
 
 After publishing the package, install the command globally:
 
 ```powershell
 npm.cmd install --global local-messenger-idle-assistant
-messenger-idle-assistant init
+localwebhook --for messenger --init
 ```
 
 Edit the generated `.env`, then start the watcher from the same directory:
 
 ```powershell
-messenger-idle-assistant
+localwebhook --for messenger --start
 ```
 
 The `.env` file is read from the directory where the command is run. Configure idle timing, direct contacts, reply text, and safety mode in `.env`. See [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) for all options.
