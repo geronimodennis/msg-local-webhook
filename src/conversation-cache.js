@@ -65,7 +65,7 @@ export function createConversationCache({
     let context;
     if (threadName) {
       const merged = new Map();
-      for (const entry of await readThread(threadName)) {
+      for (const entry of await readThread(messageId)) {
         for (const exchange of entry.cache.exchanges) merged.set(exchange.key, exchange);
       }
       for (const exchange of cache.exchanges) merged.set(exchange.key, exchange);
@@ -86,26 +86,25 @@ export function createConversationCache({
       cache.context = context;
       cache.threadName = threadName;
       await writeCache(messageId, cache);
-      await removeDuplicateThreadCaches(messageId, threadName);
+      await removeDuplicateThreadCaches(messageId);
       return cache;
     }
 
     cache.updatedAt = new Date().toISOString();
     cache.context = context;
     await writeCache(messageId, cache);
-    await removeDuplicateThreadCaches(messageId, threadName);
+    await removeDuplicateThreadCaches(messageId);
     return cache;
   }
 
-  async function removeDuplicateThreadCaches(messageId, threadName) {
-    if (!threadName) return;
+  async function removeDuplicateThreadCaches(messageId) {
     const currentPath = await fileFor(messageId, compression);
-    for (const entry of await readThread(threadName)) {
+    for (const entry of await readThread(messageId)) {
       if (entry.path !== currentPath) await unlink(entry.path).catch(() => {});
     }
   }
 
-  async function readThread(threadName) {
+  async function readThread(messageId) {
     await mkdir(directory, { recursive: true });
     const files = (await readdir(directory))
       .filter((file) => file.endsWith(".json.gz") || file.endsWith(".json"));
@@ -116,7 +115,7 @@ export function createConversationCache({
         const cache = file.endsWith(".gz")
           ? JSON.parse((await gunzipAsync(await readFile(path))).toString("utf8"))
           : JSON.parse(await readFile(path, "utf8"));
-        if (cache.threadName === threadName || cache.messageId?.startsWith(`${threadName}|`)) {
+        if (cache.messageId === messageId) {
           entries.push({ path, cache });
         }
       } catch {

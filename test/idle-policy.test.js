@@ -158,3 +158,27 @@ test("conversation cache keeps persistent memory after compaction", async () => 
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test("conversation memory is isolated for identical names with different IDs", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "msg-local-webhook-isolation-"));
+  try {
+    const cache = createConversationCache({
+      directory,
+      compression: false,
+      maxChars: 100_000
+    });
+    await cache.update("conversation-a|Same name", {
+      threadName: "Same name",
+      exchanges: [{ key: "a", role: "conversation", content: "Private detail from conversation A." }]
+    });
+    const separate = await cache.update("conversation-b|Same name", {
+      threadName: "Same name",
+      exchanges: [{ key: "b", role: "conversation", content: "Message from conversation B." }]
+    });
+
+    assert.match(separate.context, /conversation B/);
+    assert.doesNotMatch(separate.context, /conversation A/);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
