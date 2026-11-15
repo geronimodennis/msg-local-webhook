@@ -1,15 +1,19 @@
 import { watch } from "node:fs";
-import { loadConfig } from "./config.js";
+import { ensureModelMetadata, loadConfig } from "./config.js";
 import { connectMessenger } from "./messenger-browser.js";
 import { createWatcher } from "./watcher.js";
 
-const config = loadConfig();
+let config = loadConfig();
+ensureModelMetadata(config.chatbotModel);
+config = loadConfig();
 let detectedUserName = "";
 let reloadTimer;
 const envWatcher = watch(".env", () => {
-  clearTimeout(reloadTimer);
-  reloadTimer = setTimeout(() => {
-    const nextConfig = loadConfig();
+    clearTimeout(reloadTimer);
+    reloadTimer = setTimeout(() => {
+      const requestedConfig = loadConfig();
+      ensureModelMetadata(requestedConfig.chatbotModel);
+      const nextConfig = loadConfig();
     Object.assign(config, nextConfig);
     if (!nextConfig.userName) config.userName = detectedUserName;
     console.log(`[watcher] configuration reloaded: idle=${config.idleMs / 1000}s dryRun=${config.dryRun}`);

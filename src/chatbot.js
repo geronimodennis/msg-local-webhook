@@ -86,12 +86,17 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
     { role: "system", content: config.chatbotSystemPrompt },
     { role: "user", content: currentMessage }
   ];
-  const enabledTools = [
-    ...(config.chatbotWebAccess
-      ? webTools
-      : webTools.filter((tool) => tool.function.name === "rescan_conversation")),
-    ...(config.chatbotVision ? [visionTool] : [])
-  ];
+  const metadataTools = config.chatbotMetadata?.tools || {};
+  const toolCalling = config.chatbotMetadata?.capabilities?.tool_calling === true;
+  const declared = (tool) => metadataTools[tool.function.name] === true;
+  const enabledTools = toolCalling
+    ? [
+        ...(config.chatbotWebAccess ? webTools : webTools.filter((tool) =>
+          tool.function.name === "rescan_conversation"
+        )).filter(declared),
+        ...(config.chatbotVision && declared(visionTool) ? [visionTool] : [])
+      ]
+    : [];
   const maxCalls = config.chatbotWebAccess
     ? (config.chatbotWebMaxCalls || 3)
     : (config.chatbotVision ? 2 : 1);

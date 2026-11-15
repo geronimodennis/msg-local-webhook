@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { isIdle, shouldReply, formatReply } from "../src/idle-policy.js";
-import { loadConfig } from "../src/config.js";
+import { ensureModelMetadata, loadConfig } from "../src/config.js";
 import { createConversationCache } from "../src/conversation-cache.js";
 
 test("message becomes idle after the configured interval", () => {
@@ -33,6 +33,19 @@ test("model metadata controls chatbot capabilities and tools", () => {
   assert.equal(config.chatbotVision, true);
   assert.equal(config.chatbotWebAccess, true);
   assert.equal(loadConfig({ CHATBOT_MODEL: "unknown-model" }).chatbotVision, false);
+});
+
+test("model metadata is created only when missing", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "msg-local-webhook-metadata-"));
+  try {
+    const file = ensureModelMetadata("new:model", directory);
+    const first = await readFile(file, "utf8");
+    ensureModelMetadata("new:model", directory);
+    const second = await readFile(file, "utf8");
+    assert.equal(second, first);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 test("conversation cache retains twenty distinct context messages with compact keys", async () => {

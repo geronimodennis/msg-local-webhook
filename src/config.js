@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse } from "dotenv";
 
@@ -42,6 +42,27 @@ export function loadModelMetadata(model, directory = ".ai-metadata") {
   } catch (error) {
     throw new Error(`Invalid chatbot metadata file ${file}: ${error.message}`);
   }
+}
+
+export function ensureModelMetadata(model, directory = ".ai-metadata") {
+  const safeName = String(model || "default").replace(/[<>:"/\\|?*]/g, "_");
+  const file = join(directory, `${safeName}.info`);
+  if (existsSync(file)) return file;
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(file, `${JSON.stringify({
+    model,
+    provider: "unknown",
+    capabilities: {
+      tool_calling: false,
+      vision: false,
+      text: true
+    },
+    tools: {
+      rescan_conversation: true
+    },
+    notes: "Generated automatically. Review and update capabilities before enabling additional tools."
+  }, null, 2)}\n`, "utf8");
+  return file;
 }
 
 export function loadConfig(env = process.env) {
