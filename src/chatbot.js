@@ -108,6 +108,13 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
     : (config.chatbotVision ? 2 : 1);
   let calls = 0;
   let requestNumber = 0;
+  tools.onEvent?.({
+    type: "context",
+    model: config.chatbotModel,
+    characters: currentMessageText.length,
+    vision: Boolean(message.visionImage),
+    tools: enabledTools.map((tool) => tool.function.name)
+  });
 
   while (true) {
     requestNumber++;
@@ -150,6 +157,7 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
     if (!toolCalls.length) {
       const content = assistant?.content?.trim();
       if (!content) throw new Error("Chatbot returned no reply text.");
+      tools.onEvent?.({ type: "reply", characters: content.length });
       return content;
     }
     if (calls + toolCalls.length > maxCalls) {

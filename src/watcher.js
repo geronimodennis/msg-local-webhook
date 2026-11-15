@@ -119,6 +119,8 @@ export function createWatcher({
               logger.warn(`[watcher] vision capture unavailable: ${error.message}`);
             }
           }
+          chatbotLog(`historical context: ${cache.context?.length || 0} characters`);
+          chatbotLog(`vision input: ${visionImage ? "attached" : "not attached"}`);
           replyBody = await generateReply(
             {
               ...message,
@@ -132,6 +134,14 @@ export function createWatcher({
               onEvent: (event) => {
                 if (event.type === "request") chatbotLog(`request #${event.number} sent`);
                 if (event.type === "response") chatbotLog(`response #${event.number}: HTTP ${event.status}`);
+                if (event.type === "context") {
+                  chatbotLog(
+                    `model=${event.model}; prompt=${event.characters} characters; ` +
+                    `vision=${event.vision ? "attached" : "none"}; ` +
+                    `tools=${event.tools.length ? event.tools.join(", ") : "none"}`
+                  );
+                }
+                if (event.type === "reply") chatbotLog(`reply generated: ${event.characters} characters`);
                 if (event.type === "tool") chatbotLog(`is using tool: ${event.name}`);
                 if (event.type === "tool_result") {
                   const size = event.messageCount
