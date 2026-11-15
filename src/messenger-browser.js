@@ -172,9 +172,15 @@ export async function readConversationContext(page, messageCount = 10) {
 export async function readConversationMessages(page, messageCount = 10, offset = 0) {
   const targetCount = Math.max(1, Number(messageCount) || 1);
   const collected = new Set();
-  const attempts = offset > 0 ? 1 : 6;
+  // Messenger virtualizes the message list. A normal viewport can expose
+  // fewer rows than requested, so keep paging older rows until the target is
+  // reached instead of treating the first viewport as the full history.
+  const attempts = offset > 0 ? 1 : Math.max(8, targetCount);
   for (let attempt = 0; attempt < attempts && collected.size < targetCount; attempt++) {
-    if (attempt > 0 || offset > 0) await scrollConversationOlder(page);
+    if (attempt > 0 || offset > 0) {
+      const moved = await scrollConversationOlder(page);
+      if (!moved && attempt > 0) break;
+    }
     const messages = await page.locator('[role="main"]').evaluate((main) => {
     const seen = new Set();
     const labelled = [...main.querySelectorAll('[aria-label*="Message sent" i], [aria-label*="Message received" i]')]
@@ -225,8 +231,9 @@ async function scrollConversationOlder(page) {
     scrollable.dispatchEvent(new Event("scroll", { bubbles: true }));
     return { oldTop, newTop: scrollable.scrollTop };
   });
-  if (!before) return;
-  await page.waitForTimeout(750);
+  if (!before || before.newTop === before.oldTop) return false;
+  await page.waitForTimeout(500);
+  return true;
 }
 
 async function countSentReplies(page, text) {
