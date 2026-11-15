@@ -12,6 +12,7 @@ import { shouldReply, formatReply } from "./idle-policy.js";
 import { createStateStore } from "./state-store.js";
 import { generateReply, summarizeConversation } from "./chatbot.js";
 import { createConversationCache, dumpRescan } from "./conversation-cache.js";
+import { createHash } from "node:crypto";
 
 export function createWatcher({
   page,
@@ -87,15 +88,20 @@ export function createWatcher({
         const previousMessages = await readConversationMessages(page, config.chatbotContextMessages);
         const scannedMessages = new Set(previousMessages);
         try {
+          const conversationMessages = [...previousMessages];
+          if (!conversationMessages.some((content) => content.includes(message.text))) {
+            conversationMessages.push(message.text);
+          }
           cache = await conversationCache.update(cacheKey, {
             threadName: candidate.threadName,
             exchanges: [
-              ...previousMessages.map((content, index) => ({
-                key: `context:${index}:${content}`,
-                role: "conversation",
-                content
-              })),
-              { key: `incoming:${candidate.id}`, role: "incoming", content: message.text }
+              ...conversationMessages
+                .slice(-config.chatbotContextMessages)
+                .map((content) => ({
+                  key: exchangeKey("context", content),
+                  role: "conversation",
+                  content
+                }))
             ]
           });
         } catch (error) {
@@ -146,8 +152,8 @@ export function createWatcher({
                 );
           await conversationCache.update(cacheKey, {
                   threadName: candidate.threadName,
-                  exchanges: older.map((content, index) => ({
-                    key: `rescan:${scanOffset - messageCount}:${index}:${content}`,
+                  exchanges: older.map((content) => ({
+                    key: exchangeKey("rescan", content),
                     role: "conversation",
                     content
                   }))
@@ -181,7 +187,7 @@ export function createWatcher({
             await conversationCache.update(cacheKey, {
               threadName: candidate.threadName,
               exchanges: [{
-                key: `assistant:${currentTime}`,
+                key: exchangeKey("assistant", text, String(currentTime)),
                 role: "assistant",
                 content: text
               }]
@@ -241,6 +247,14 @@ function matchesConfiguredMention(text, config) {
     config.userName &&
     new RegExp(`@${escapeRegExp(config.userName)}`, "iu").test(text)
   );
+}
+
+function exchangeKey(role, content, suffix = "") {
+  const digest = createHash("sha256")
+    .update(`${role}|${suffix}|${String(content).trim()}`)
+    .digest("hex")
+    .slice(0, 20);
+  return `${role}:${digest}`;
 }
 
 function escapeRegExp(value) {

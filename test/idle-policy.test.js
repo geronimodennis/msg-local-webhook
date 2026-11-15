@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { isIdle, shouldReply, formatReply } from "../src/idle-policy.js";
 import { loadConfig } from "../src/config.js";
+import { createConversationCache } from "../src/conversation-cache.js";
 
 test("message becomes idle after the configured interval", () => {
   assert.equal(isIdle({ receivedAt: 0, seenAt: 0, now: 300_000, idleMs: 300_000 }), true);
@@ -22,4 +26,32 @@ test("reply prefix is exact", () => {
 test("idle policy is configurable in seconds or minutes", () => {
   assert.equal(loadConfig({ IDLE_VALUE: "10", IDLE_UNIT: "seconds" }).idleMs, 10_000);
   assert.equal(loadConfig({ IDLE_VALUE: "2", IDLE_UNIT: "minutes" }).idleMs, 120_000);
+});
+
+test("conversation cache retains twenty distinct context messages with compact keys", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "msg-local-webhook-cache-"));
+  try {
+    const cache = createConversationCache({
+      directory,
+      compression: false,
+      maxChars: 100_000
+    });
+    const messages = Array.from({ length: 20 }, (_, index) => ({
+      role: "conversation",
+      content: `Message ${index + 1}`,
+      timestamp: new Date(1_000 + index).toISOString()
+    }));
+
+    const result = await cache.update("conversation-1|Test contact", {
+      threadName: "Test contact",
+      exchanges: messages
+    });
+
+    assert.equal(result.exchanges.length, 20);
+    assert.equal(result.context.split("\n").length, 20);
+    assert.ok(result.exchanges.every((exchange) => !exchange.key.includes(exchange.content)));
+    assert.ok(result.exchanges.every((exchange) => exchange.key.length < 40));
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });

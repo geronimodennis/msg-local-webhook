@@ -170,8 +170,12 @@ export async function readConversationContext(page, messageCount = 10) {
 }
 
 export async function readConversationMessages(page, messageCount = 10, offset = 0) {
-  if (offset > 0) await scrollConversationOlder(page);
-  const messages = await page.locator('[role="main"]').evaluate((main) => {
+  const targetCount = Math.max(1, Number(messageCount) || 1);
+  const collected = new Set();
+  const attempts = offset > 0 ? 1 : 6;
+  for (let attempt = 0; attempt < attempts && collected.size < targetCount; attempt++) {
+    if (attempt > 0 || offset > 0) await scrollConversationOlder(page);
+    const messages = await page.locator('[role="main"]').evaluate((main) => {
     const seen = new Set();
     const labelled = [...main.querySelectorAll('[aria-label*="Message sent" i], [aria-label*="Message received" i]')]
       .map((node) => (node.getAttribute("aria-label") || "").trim());
@@ -185,11 +189,15 @@ export async function readConversationMessages(page, messageCount = 10, offset =
         seen.add(text);
         return true;
       });
-  }).catch(() => []);
+    }).catch(() => []);
+    for (const message of messages) collected.add(message);
+    if (!messages.length) break;
+  }
 
-  if (messages.length) {
-    if (offset > 0) return messages.slice(0, messageCount);
-    return messages.slice(-messageCount);
+  if (collected.size) {
+    const messages = [...collected];
+    if (offset > 0) return messages.slice(0, targetCount);
+    return messages.slice(-targetCount);
   }
   const fallback = (await page.locator('[role="main"]').innerText().catch(() => "")).trim();
   return fallback ? [fallback] : [];

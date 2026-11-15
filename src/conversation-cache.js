@@ -45,7 +45,7 @@ export function createConversationCache({
     const known = new Set(cache.exchanges.map((exchange) => exchange.key));
 
     for (const exchange of exchanges) {
-      const key = exchange.key || `${exchange.role}:${exchange.content}`;
+      const key = exchange.key || stableExchangeKey(exchange);
       if (!exchange.content?.trim() || known.has(key)) continue;
       cache.exchanges.push({
         key,
@@ -81,16 +81,23 @@ export function createConversationCache({
       cache.context = context;
       cache.threadName = threadName;
       await writeCache(messageId, cache);
-      for (const entry of await readThread(threadName)) {
-        if (entry.path !== await fileFor(messageId)) await unlink(entry.path).catch(() => {});
-      }
+      await removeDuplicateThreadCaches(messageId, threadName);
       return cache;
     }
 
     cache.updatedAt = new Date().toISOString();
     cache.context = context;
     await writeCache(messageId, cache);
+    await removeDuplicateThreadCaches(messageId, threadName);
     return cache;
+  }
+
+  async function removeDuplicateThreadCaches(messageId, threadName) {
+    if (!threadName) return;
+    const currentPath = await fileFor(messageId, compression);
+    for (const entry of await readThread(threadName)) {
+      if (entry.path !== currentPath) await unlink(entry.path).catch(() => {});
+    }
   }
 
   async function readThread(threadName) {
@@ -147,4 +154,11 @@ function formatExchanges(exchanges) {
   return exchanges.map((exchange) =>
     `[${exchange.role}] ${exchange.content}`
   ).join("\n");
+}
+
+function stableExchangeKey(exchange) {
+  return createHash("sha256")
+    .update(`${exchange.role || "conversation"}|${exchange.timestamp || ""}|${exchange.content || ""}`)
+    .digest("hex")
+    .slice(0, 20);
 }
