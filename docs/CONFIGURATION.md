@@ -25,7 +25,7 @@ Copy `.env.example` to `.env` and edit the values below. The watcher reloads the
 | `CHATBOT_API_URL` | OpenAI-compatible URL, ending in `/v1` or `/v1/chat/completions` | Required when `REPLY_MODE=chatbot`; `/v1` is expanded automatically. |
 | `CHATBOT_API_KEY` | Token or empty | Optional bearer token for the chatbot endpoint. |
 | `CHATBOT_MODEL` | Model name | Model sent to the chatbot endpoint. |
-| `CHATBOT_VERBOSE_LOGGING` | `true` or `false` | Logs model, prompt/context sizes, vision status, enabled tools, requests, tool use, response sizes, retries, and fallback errors without logging message contents; default `true`. |
+| `CHATBOT_VERBOSE_LOGGING` | `true` or `false` | Logs model, context/prompt sizes, vision status, request tool choices, tool parameters, image metadata, responses, retries, and fallback errors. Base64 image payloads are abbreviated; message contents are not logged. Default `true`. |
 | `CHATBOT_RESCAN_BEFORE_REPLY` | `true` or `false` | Forces one fresh conversation rescan before generation; default `false`. |
 | `CHATBOT_TEMPERATURE` | Number, normally `0` to `2` | Generation randomness. |
 | `CHATBOT_CONTEXT_MESSAGES` | Positive integer; defaults to `1` when unset | Number of newest previous conversation messages sent to the chatbot. |

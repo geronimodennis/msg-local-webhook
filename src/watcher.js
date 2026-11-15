@@ -132,8 +132,21 @@ export function createWatcher({
             {
               rescanRequested: false,
               onEvent: (event) => {
-                if (event.type === "request") chatbotLog(`request #${event.number} sent`);
+                if (event.type === "request") {
+                  chatbotLog(
+                    `request #${event.number} sent: model=${event.model}; ` +
+                    `messages=${event.messageCount}; images=${event.imageCount}; ` +
+                    `tool_choice=${JSON.stringify(event.toolChoice)}`
+                  );
+                }
                 if (event.type === "response") chatbotLog(`response #${event.number}: HTTP ${event.status}`);
+                if (event.type === "response_detail") {
+                  chatbotLog(
+                    `response #${event.number} detail: ` +
+                    `tool_calls=${event.toolCalls.length ? event.toolCalls.join(", ") : "none"}; ` +
+                    `reply=${event.replyCharacters} characters`
+                  );
+                }
                 if (event.type === "context") {
                   chatbotLog(
                     `model=${event.model}; prompt=${event.characters} characters; ` +
@@ -143,6 +156,12 @@ export function createWatcher({
                 }
                 if (event.type === "reply") chatbotLog(`reply generated: ${event.characters} characters`);
                 if (event.type === "tool") chatbotLog(`is using tool: ${event.name}`);
+                if (event.type === "tool_args") {
+                  chatbotLog(`tool parameters ${event.name}: ${JSON.stringify(event.args)}`);
+                }
+                if (event.type === "tool_image") {
+                  chatbotLog(`tool image ${event.name}: ${event.url}`);
+                }
                 if (event.type === "tool_result") {
                   const size = event.messageCount
                     ? `${event.messageCount} messages`

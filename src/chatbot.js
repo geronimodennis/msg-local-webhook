@@ -118,7 +118,15 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
 
   while (true) {
     requestNumber++;
-    tools.onEvent?.({ type: "request", number: requestNumber });
+    const toolChoice = forcedToolChoice(config, tools, enabledTools);
+    tools.onEvent?.({
+      type: "request",
+      number: requestNumber,
+      model: config.chatbotModel,
+      messageCount: messages.length,
+      toolChoice,
+      imageCount: countImages(messages)
+    });
     let response;
     try {
       response = await fetchImpl(config.chatbotApiUrl, {
@@ -133,7 +141,7 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
           temperature: config.chatbotTemperature,
           tools: enabledTools,
           ...(enabledTools.length ? {
-            tool_choice: forcedToolChoice(config, tools, enabledTools)
+            tool_choice: toolChoice
           } : {})
         })
       });
@@ -152,6 +160,12 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
     const data = await response.json();
     const assistant = data.choices?.[0]?.message;
     const toolCalls = assistant?.tool_calls || [];
+    tools.onEvent?.({
+      type: "response_detail",
+      number: requestNumber,
+      toolCalls: toolCalls.map((call) => call.function?.name).filter(Boolean),
+      replyCharacters: typeof assistant?.content === "string" ? assistant.content.length : 0
+    });
     if (!toolCalls.length) {
       const content = assistant?.content?.trim();
       if (!content) throw new Error("Chatbot returned no reply text.");
@@ -175,6 +189,7 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
       } catch {
         args = {};
       }
+      tools.onEvent?.({ type: "tool_args", name, args });
       const result = await executeWebTool(name, args, config, tools);
       const content = typeof result === "string" ? result : result.content;
       const toolMessage = typeof result === "string"
@@ -192,6 +207,11 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
         content: toolMessage
       });
       if (typeof result !== "string" && result.imageUrl) {
+        tools.onEvent?.({
+          type: "tool_image",
+          name,
+          url: describeImageUrl(result.imageUrl)
+        });
         messages.push({
           role: "user",
           content: [
@@ -219,6 +239,19 @@ function forcedToolChoice(config, tools, enabledTools) {
   return name
     ? { type: "function", function: { name } }
     : "auto";
+}
+
+function countImages(messages) {
+  return messages.reduce((count, message) =>
+    count + (Array.isArray(message.content)
+      ? message.content.filter((part) => part.type === "image_url").length
+      : 0), 0);
+}
+
+function describeImageUrl(url) {
+  if (!String(url).startsWith("data:")) return url;
+  const [header] = String(url).split(",", 1);
+  return `${header},[base64 omitted; ${url.length} characters]`;
 }
 
 export async function summarizeConversation(context, config, fetchImpl = fetch) {
