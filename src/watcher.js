@@ -107,7 +107,18 @@ export function createWatcher({
             {
               rescanRequested: false,
               onEvent: (event) => {
+                if (event.type === "request") chatbotLog(`request #${event.number} sent`);
+                if (event.type === "response") chatbotLog(`response #${event.number}: HTTP ${event.status}`);
                 if (event.type === "tool") chatbotLog(`is using tool: ${event.name}`);
+                if (event.type === "tool_result") {
+                  chatbotLog(`tool result: ${event.name} (${event.characters} characters)`);
+                }
+                if (event.type === "retry") {
+                  chatbotLog(`retrying after ${event.toolCount} tool call(s)`);
+                }
+                if (event.type === "error") {
+                  chatbotLog(`request error ${event.code}`, "error");
+                }
               },
               rescanConversation: async (messageCount, offset) => {
                 const older = await readConversationMessages(page, messageCount, offset);

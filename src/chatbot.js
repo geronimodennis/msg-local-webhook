@@ -76,26 +76,36 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
     : webTools.filter((tool) => tool.function.name === "rescan_conversation");
   const maxCalls = config.chatbotWebAccess ? (config.chatbotWebMaxCalls || 3) : 1;
   let calls = 0;
+  let requestNumber = 0;
 
   while (true) {
-      const response = await fetchImpl(config.chatbotApiUrl, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        ...(config.chatbotApiKey ? { authorization: `Bearer ${config.chatbotApiKey}` } : {})
-      },
-      body: JSON.stringify({
-        model: config.chatbotModel,
-        messages,
-        temperature: config.chatbotTemperature,
-        tools: enabledTools,
-        ...(enabledTools.length ? {
-          tool_choice: config.chatbotRescanBeforeReply && !tools.rescanRequested
-            ? { type: "function", function: { name: "rescan_conversation" } }
-            : "auto"
-        } : {})
-      })
-    });
+    requestNumber++;
+    tools.onEvent?.({ type: "request", number: requestNumber });
+    let response;
+    try {
+      response = await fetchImpl(config.chatbotApiUrl, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          ...(config.chatbotApiKey ? { authorization: `Bearer ${config.chatbotApiKey}` } : {})
+        },
+        body: JSON.stringify({
+          model: config.chatbotModel,
+          messages,
+          temperature: config.chatbotTemperature,
+          tools: enabledTools,
+          ...(enabledTools.length ? {
+            tool_choice: config.chatbotRescanBeforeReply && !tools.rescanRequested
+              ? { type: "function", function: { name: "rescan_conversation" } }
+              : "auto"
+          } : {})
+        })
+      });
+    } catch (error) {
+      tools.onEvent?.({ type: "error", number: requestNumber, code: error.code || "NETWORK_ERROR" });
+      throw error;
+    }
+    tools.onEvent?.({ type: "response", number: requestNumber, status: response.status });
 
     if (!response.ok) {
       const error = new Error(`Chatbot request failed with HTTP ${response.status}.`);
@@ -116,6 +126,7 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
     }
 
     messages.push(assistant);
+    tools.onEvent?.({ type: "retry", number: requestNumber, toolCount: toolCalls.length });
     for (const toolCall of toolCalls) {
       const name = toolCall.function?.name;
       tools.onEvent?.({ type: "tool", name });
@@ -127,6 +138,7 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
         args = {};
       }
       const result = await executeWebTool(name, args, config, tools);
+      tools.onEvent?.({ type: "tool_result", name, characters: result.length });
       messages.push({
         role: "tool",
         tool_call_id: toolCall.id,
