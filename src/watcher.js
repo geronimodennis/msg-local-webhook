@@ -77,10 +77,10 @@ export function createWatcher({
       if (inboxCandidates.length) await openInboxCandidate(page, candidate.threadName);
       let replyBody = config.replyText;
       let cache;
+      const cacheKey = [candidate.conversationId, candidate.threadName]
+        .filter(Boolean)
+        .join("|") || candidate.id;
       if (config.replyMode === "chatbot") {
-        const cacheKey = [candidate.conversationId, candidate.threadName]
-          .filter(Boolean)
-          .join("|") || candidate.id;
         const chatbotLog = (message, level = "log") => {
           if (!config.chatbotVerboseLogging) return;
           logger[level](`[chatbot] ${message}`);

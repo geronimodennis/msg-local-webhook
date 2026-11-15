@@ -133,9 +133,7 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
           temperature: config.chatbotTemperature,
           tools: enabledTools,
           ...(enabledTools.length ? {
-            tool_choice: config.chatbotRescanBeforeReply && !tools.rescanRequested
-              ? { type: "function", function: { name: "rescan_conversation" } }
-              : "auto"
+            tool_choice: forcedToolChoice(config, tools, enabledTools)
           } : {})
         })
       });
@@ -170,6 +168,7 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
       const name = toolCall.function?.name;
       tools.onEvent?.({ type: "tool", name });
       if (name === "rescan_conversation") tools.rescanRequested = true;
+      if (name === "inspect_current_conversation") tools.visionRequested = true;
       let args;
       try {
         args = JSON.parse(toolCall.function?.arguments || "{}");
@@ -204,6 +203,22 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
       calls++;
     }
   }
+}
+
+function forcedToolChoice(config, tools, enabledTools) {
+  const available = new Set(enabledTools.map((tool) => tool.function.name));
+  const name = config.chatbotRescanBeforeReply &&
+    !tools.rescanRequested &&
+    available.has("rescan_conversation")
+    ? "rescan_conversation"
+    : config.chatbotVision &&
+      !tools.visionRequested &&
+      available.has("inspect_current_conversation")
+      ? "inspect_current_conversation"
+      : null;
+  return name
+    ? { type: "function", function: { name } }
+    : "auto";
 }
 
 export async function summarizeConversation(context, config, fetchImpl = fetch) {
