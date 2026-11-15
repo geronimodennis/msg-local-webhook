@@ -32,7 +32,6 @@ Copy `.env.example` to `.env` and edit the values below. The watcher reloads the
 | `CHATBOT_CACHE_DIRECTORY` | Relative or absolute directory | Location of per-message chatbot cache files; default `.cache`. |
 | `CHATBOT_CACHE_MAX_CHARS` | Positive number | Cache size threshold that triggers summarization and replacement. |
 | `CHATBOT_CACHE_COMPRESSION` | `true` or `false` | Enables gzip cache files; `false` writes readable JSON files. |
-| `CHATBOT_VISION_DUMP_DIRECTORY` | Relative or absolute directory | Directory where vision-tool screenshots are saved for inspection; default `.cache/vision`. |
 | `CHATBOT_WEB_MAX_CHARS` | Positive number | Maximum characters returned from each web tool; default `8000`. |
 | `CHATBOT_WEB_MAX_CALLS` | Positive number, capped at 5 | Maximum web-tool calls per reply; default `3`. |
 | `rescan_conversation` | Chatbot tool | Lets the model rescan the currently open Messenger conversation when cached context is insufficient. |

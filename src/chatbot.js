@@ -74,7 +74,7 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
     tools.onEvent?.({ type: "tool", name: "inspect_current_conversation" });
     tools.onEvent?.({ type: "tool_args", name: "inspect_current_conversation", args: { reason } });
     try {
-      const captured = await tools.captureConversation({ dump: true });
+      const captured = await tools.captureConversation();
       message = {
         ...message,
         visionImage: captured.imageUrl || captured
@@ -89,7 +89,6 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
         type: "tool_image",
         name: "inspect_current_conversation",
         url: describeImageUrl(message.visionImage),
-        path: captured.path,
         source: captured.source,
         sourceUrl: captured.sourceUrl
       });
@@ -244,8 +243,7 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
           type: "tool_image",
           name,
           url: describeImageUrl(result.imageUrl),
-          path: result.dumpPath,
-          source: result.source,
+           source: result.source,
           sourceUrl: result.sourceUrl
         });
         messages.push({
@@ -336,12 +334,11 @@ async function executeWebTool(name, args, config, tools) {
   }
   if (name === "inspect_current_conversation") {
     if (!tools.captureConversation) return "Visual inspection is unavailable.";
-    const captured = await tools.captureConversation({ dump: true });
+    const captured = await tools.captureConversation();
     return {
       toolMessage: `Visual inspection completed for: ${args.reason || "the current conversation"}. The image is attached in the next message.`,
           imageUrl: captured.imageUrl || captured,
-          dumpPath: captured.path,
-          source: captured.source
+      source: captured.source
     };
   }
   return `Unknown tool: ${name}`;

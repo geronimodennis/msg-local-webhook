@@ -13,8 +13,6 @@ import { createStateStore } from "./state-store.js";
 import { generateReply, summarizeConversation } from "./chatbot.js";
 import { createConversationCache } from "./conversation-cache.js";
 import { createHash } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
 
 export function createWatcher({
   page,
@@ -155,8 +153,7 @@ export function createWatcher({
                   chatbotLog(
                     `tool image ${event.name}: ${event.url}` +
                     (event.source ? `; source=${event.source}` : "") +
-                    (event.sourceUrl ? `; source_url=${event.sourceUrl}` : "") +
-                    (event.path ? `; dumped to ${event.path}` : "")
+                    (event.sourceUrl ? `; source_url=${event.sourceUrl}` : "")
                   );
                 }
                 if (event.type === "tool_result") {
@@ -197,7 +194,7 @@ export function createWatcher({
                 };
               },
               captureConversation: async () => {
-                return captureConversationImage(page, config.chatbotVisionDumpDirectory);
+                return captureConversationImage(page);
               }
             }
           );
@@ -294,7 +291,7 @@ function exchangeKey(role, content, suffix = "") {
   return `${role}:${digest}`;
 }
 
-async function captureConversationImage(page, dumpDirectory = "") {
+async function captureConversationImage(page) {
   await scrollConversationRecent(page);
   const imageLocator = page.locator('[role="main"] img');
   const imageIndex = await imageLocator.evaluateAll((images) => {
@@ -332,22 +329,8 @@ async function captureConversationImage(page, dumpDirectory = "") {
     }
   }
   if (!image) image = await target.screenshot({ type: "png" });
-  let path;
-  if (dumpDirectory) {
-    await mkdir(dumpDirectory, { recursive: true });
-    const extension = imageMime === "image/jpeg"
-      ? "jpg"
-      : imageMime === "image/webp"
-        ? "webp"
-        : imageMime === "image/gif"
-          ? "gif"
-          : "png";
-    path = join(dumpDirectory, `vision-${Date.now()}.${extension}`);
-    await writeFile(path, image);
-  }
   return {
     imageUrl: `data:${imageMime};base64,${image.toString("base64")}`,
-    path,
     source,
     sourceUrl
   };
