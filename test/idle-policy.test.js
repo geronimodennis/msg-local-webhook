@@ -107,3 +107,34 @@ test("conversation cache orders Messenger messages by their displayed time", asy
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test("conversation cache keeps persistent memory after compaction", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "msg-local-webhook-summary-"));
+  try {
+    const cache = createConversationCache({
+      directory,
+      compression: false,
+      maxChars: 50,
+      summarize: async () => "The user prefers Gundam 00 and asked about Setsuna."
+    });
+    const compacted = await cache.update("conversation-4|Test contact", {
+      threadName: "Test contact",
+      exchanges: [
+        { key: "one", role: "conversation", content: "My favorite is Gundam 00." },
+        { key: "two", role: "conversation", content: "Tell me about Setsuna F. Seiei." }
+      ]
+    });
+    const next = await cache.update("conversation-4|Test contact", {
+      threadName: "Test contact",
+      exchanges: [
+        { key: "three", role: "conversation", content: "What do you remember?" }
+      ]
+    });
+
+    assert.match(compacted.memory.summary, /Gundam 00/);
+    assert.match(next.context, /persistent memory/);
+    assert.match(next.context, /Gundam 00/);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});

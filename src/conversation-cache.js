@@ -43,6 +43,7 @@ export function createConversationCache({
       : input;
     const cache = await read(messageId);
     cache.threadName ||= threadName;
+    cache.memory ||= { summary: "" };
     cache.exchanges = cache.exchanges.map((exchange) => ({
       ...exchange,
       timestamp: messageTimestamp(exchange.content, exchange.timestamp)
@@ -68,19 +69,20 @@ export function createConversationCache({
         for (const exchange of entry.cache.exchanges) merged.set(exchange.key, exchange);
       }
       for (const exchange of cache.exchanges) merged.set(exchange.key, exchange);
-        context = formatExchanges([...merged.values()].sort(compareExchanges));
-    } else {
-      context = formatExchanges(cache.exchanges);
+        context = formatContext(cache.memory, [...merged.values()].sort(compareExchanges));
+      } else {
+      context = formatContext(cache.memory, cache.exchanges);
     }
     if (context.length > maxChars) {
       const summary = await summarize(context);
+      cache.memory.summary = summary.trim();
       cache.exchanges = [{
         key: `summary:${Date.now()}`,
         role: "summary",
-        content: summary.trim(),
+        content: cache.memory.summary,
         timestamp: new Date().toISOString()
       }];
-      context = formatExchanges(cache.exchanges);
+      context = formatContext(cache.memory, cache.exchanges);
       cache.context = context;
       cache.threadName = threadName;
       await writeCache(messageId, cache);
@@ -167,6 +169,15 @@ function formatExchanges(exchanges) {
       : exchange.role;
     return `[${role}] ${exchange.content}`;
   }).join("\n");
+}
+
+function formatContext(memory, exchanges) {
+  const sections = [];
+  if (memory?.summary?.trim()) {
+    sections.push(`[persistent memory]\n${memory.summary.trim()}`);
+  }
+  if (exchanges.length) sections.push(formatExchanges(exchanges));
+  return sections.join("\n\n");
 }
 
 function stableExchangeKey(exchange) {

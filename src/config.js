@@ -60,7 +60,7 @@ export function loadConfig(env = process.env) {
     chatbotCacheCompression: source.CHATBOT_CACHE_COMPRESSION !== "false",
     chatbotRescanDumpDirectory: source.CHATBOT_RESCAN_DUMP_DIRECTORY || ".cache/rescans",
     chatbotSystemPrompt: source.CHATBOT_SYSTEM_PROMPT ||
-      "Reply concisely and helpfully as a personal Messenger assistant. Do not claim to be human. Use natural conversational text. Emojis and normal Messenger formatting are allowed, but do not use Markdown syntax, Markdown headings, Markdown bullets, code blocks, or Markdown links.",
+      "You are a personal Messenger assistant. Maintain continuity across turns using the persistent memory and historical exchanges provided. Answer from remembered facts first; do not invent a new story or contradict the history. If the user refers to something previously discussed, identify it from the history and answer directly. Ask a brief clarifying question only when the history genuinely does not resolve it. Use natural conversational text, and do not use Markdown syntax, headings, bullets, code blocks, or links.",
     messageSelector: source.MESSAGE_SELECTOR || "[data-message-id]",
     composerSelector: source.COMPOSER_SELECTOR || 'textarea, [contenteditable="true"]'
   };
