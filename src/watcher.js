@@ -13,6 +13,8 @@ import { createStateStore } from "./state-store.js";
 import { generateReply, summarizeConversation } from "./chatbot.js";
 import { createConversationCache } from "./conversation-cache.js";
 import { createHash } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 
 export function createWatcher({
   page,
@@ -114,7 +116,7 @@ export function createWatcher({
           let visionImage;
           if (config.chatbotVision) {
             try {
-              visionImage = await captureConversationImage(page);
+              visionImage = (await captureConversationImage(page)).imageUrl;
             } catch (error) {
               logger.warn(`[watcher] vision capture unavailable: ${error.message}`);
             }
@@ -160,7 +162,10 @@ export function createWatcher({
                   chatbotLog(`tool parameters ${event.name}: ${JSON.stringify(event.args)}`);
                 }
                 if (event.type === "tool_image") {
-                  chatbotLog(`tool image ${event.name}: ${event.url}`);
+                  chatbotLog(
+                    `tool image ${event.name}: ${event.url}` +
+                    (event.path ? `; dumped to ${event.path}` : "")
+                  );
                 }
                 if (event.type === "tool_result") {
                   const size = event.messageCount
@@ -200,7 +205,7 @@ export function createWatcher({
                 };
               },
               captureConversation: async () => {
-                return captureConversationImage(page);
+                return captureConversationImage(page, config.chatbotVisionDumpDirectory);
               }
             }
           );
@@ -297,10 +302,19 @@ function exchangeKey(role, content, suffix = "") {
   return `${role}:${digest}`;
 }
 
-async function captureConversationImage(page) {
+async function captureConversationImage(page, dumpDirectory = "") {
   const view = page.locator('[role="main"]').first();
   const image = await view.screenshot({ type: "png" });
-  return `data:image/png;base64,${image.toString("base64")}`;
+  let path;
+  if (dumpDirectory) {
+    await mkdir(dumpDirectory, { recursive: true });
+    path = join(dumpDirectory, `vision-${Date.now()}.png`);
+    await writeFile(path, image);
+  }
+  return {
+    imageUrl: `data:image/png;base64,${image.toString("base64")}`,
+    path
+  };
 }
 
 function escapeRegExp(value) {

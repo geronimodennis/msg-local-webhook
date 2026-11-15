@@ -100,6 +100,7 @@ export function loadConfig(env = process.env) {
       chatbotMetadata.tools.fetch_url === true,
     chatbotVision: chatbotMetadata.capabilities.vision === true &&
       chatbotMetadata.tools.inspect_current_conversation === true,
+    chatbotVisionDumpDirectory: source.CHATBOT_VISION_DUMP_DIRECTORY || ".cache/vision",
     chatbotWebMaxChars: positiveNumber(source.CHATBOT_WEB_MAX_CHARS, 8_000),
     chatbotWebMaxCalls: Math.min(5, positiveNumber(source.CHATBOT_WEB_MAX_CALLS, 3)),
     chatbotContextMessages: Math.floor(positiveNumber(source.CHATBOT_CONTEXT_MESSAGES, 1)),

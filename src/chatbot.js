@@ -210,7 +210,8 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
         tools.onEvent?.({
           type: "tool_image",
           name,
-          url: describeImageUrl(result.imageUrl)
+          url: describeImageUrl(result.imageUrl),
+          path: result.dumpPath
         });
         messages.push({
           role: "user",
@@ -295,9 +296,11 @@ async function executeWebTool(name, args, config, tools) {
   }
   if (name === "inspect_current_conversation") {
     if (!tools.captureConversation) return "Visual inspection is unavailable.";
+    const captured = await tools.captureConversation({ dump: true });
     return {
       toolMessage: `Visual inspection completed for: ${args.reason || "the current conversation"}. The image is attached in the next message.`,
-      imageUrl: await tools.captureConversation()
+      imageUrl: captured.imageUrl || captured,
+      dumpPath: captured.path
     };
   }
   return `Unknown tool: ${name}`;
