@@ -43,6 +43,10 @@ export function createConversationCache({
       : input;
     const cache = await read(messageId);
     cache.threadName ||= threadName;
+    cache.exchanges = cache.exchanges.map((exchange) => ({
+      ...exchange,
+      timestamp: messageTimestamp(exchange.content, exchange.timestamp)
+    }));
     const known = new Set(cache.exchanges.map((exchange) => exchange.key));
 
     for (const exchange of exchanges) {
@@ -52,7 +56,7 @@ export function createConversationCache({
         key,
         role: exchange.role || "conversation",
         content: exchange.content.trim(),
-        timestamp: exchange.timestamp || new Date().toISOString()
+        timestamp: messageTimestamp(exchange.content, exchange.timestamp)
       });
       known.add(key);
     }
@@ -169,4 +173,17 @@ function stableExchangeKey(exchange) {
     .update(`${exchange.role || "conversation"}|${exchange.timestamp || ""}|${exchange.content || ""}`)
     .digest("hex")
     .slice(0, 20);
+}
+
+function messageTimestamp(content, fallback) {
+  const match = String(content || "").match(
+    /Message\s+(?:sent|received)\s+(\d{1,2}):(\d{2})\s*([AP]M)/iu
+  );
+  if (!match) return fallback || new Date().toISOString();
+
+  const date = new Date();
+  let hour = Number(match[1]) % 12;
+  if (match[3].toUpperCase() === "PM") hour += 12;
+  date.setHours(hour, Number(match[2]), 0, 0);
+  return date.toISOString();
 }

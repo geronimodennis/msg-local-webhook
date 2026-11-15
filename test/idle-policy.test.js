@@ -84,3 +84,25 @@ test("conversation cache preserves earlier turns for the next reply", async () =
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test("conversation cache orders Messenger messages by their displayed time", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "msg-local-webhook-order-"));
+  try {
+    const cache = createConversationCache({
+      directory,
+      compression: false,
+      maxChars: 100_000
+    });
+    const result = await cache.update("conversation-3|Test contact", {
+      threadName: "Test contact",
+      exchanges: [
+        { key: "later", role: "conversation", content: "Enter, Message sent 11:41 PM by Me: Current question" },
+        { key: "earlier", role: "conversation", content: "Enter, Message sent 11:28 PM by Me: Can you tell me about Gundam 00?" }
+      ]
+    });
+
+    assert.ok(result.context.indexOf("Gundam 00") < result.context.indexOf("Current question"));
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
