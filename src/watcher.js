@@ -113,30 +113,11 @@ export function createWatcher({
         if (!config.dryRun) await showTyping(page, config.composerSelector);
         chatbotLog("is composing a message");
         try {
-          let visionImage;
-          let visionPath;
-          if (config.chatbotVision) {
-            try {
-              const captured = await captureConversationImage(
-                page,
-                config.chatbotVisionDumpDirectory
-              );
-              visionImage = captured.imageUrl;
-              visionPath = captured.path;
-            } catch (error) {
-              logger.warn(`[watcher] vision capture unavailable: ${error.message}`);
-            }
-          }
           chatbotLog(`historical context: ${cache.context?.length || 0} characters`);
-          chatbotLog(
-            `vision input: ${visionImage ? "attached" : "not attached"}` +
-            (visionPath ? `; dumped to ${visionPath}` : "")
-          );
           replyBody = await generateReply(
             {
               ...message,
-              conversationContext: cache.context,
-              visionImage
+              conversationContext: cache.context
             },
             config,
             fetch,
@@ -186,7 +167,7 @@ export function createWatcher({
                   chatbotLog(`retrying after ${event.toolCount} tool call(s)`);
                 }
                 if (event.type === "error") {
-                  chatbotLog(`request error ${event.code}`, "error");
+                  chatbotLog(`request error ${event.code}: ${event.message || "unknown error"}`, "error");
                 }
               },
               rescanConversation: async (messageCount, offset) => {

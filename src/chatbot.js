@@ -69,6 +69,36 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
   if (!config.chatbotApiUrl) {
     throw new Error("CHATBOT_API_URL is required when REPLY_MODE=chatbot.");
   }
+  if (config.chatbotVision && tools.captureConversation) {
+    const reason = "Inspect the current Messenger conversation for visual attachments.";
+    tools.onEvent?.({ type: "tool", name: "inspect_current_conversation" });
+    tools.onEvent?.({ type: "tool_args", name: "inspect_current_conversation", args: { reason } });
+    try {
+      const captured = await tools.captureConversation({ dump: true });
+      message = {
+        ...message,
+        visionImage: captured.imageUrl || captured
+      };
+      tools.visionRequested = true;
+      tools.onEvent?.({
+        type: "tool_result",
+        name: "inspect_current_conversation",
+        characters: 0
+      });
+      tools.onEvent?.({
+        type: "tool_image",
+        name: "inspect_current_conversation",
+        url: describeImageUrl(message.visionImage),
+        path: captured.path
+      });
+    } catch (error) {
+      tools.onEvent?.({
+        type: "error",
+        code: "VISION_CAPTURE_ERROR",
+        message: error.message
+      });
+    }
+  }
 
   const sender = message.threadName || "Messenger contact";
   const currentMessageText = [
