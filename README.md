@@ -32,7 +32,7 @@ Keep `DRY_RUN=true` for the first test. Set `DRY_RUN=false` only after confirmin
 After publishing the package, install the command globally:
 
 ```powershell
-npm.cmd install --global localwebhook
+npm.cmd install --global @geronimodennis/localwebhook
 localwebhook --for messenger --init
 ```
 

@@ -1,6 +1,6 @@
 {
-  "name": "localwebhook",
-  "version": "0.1.3",
+  "name": "@geronimodennis/localwebhook",
+  "version": "0.1.4",
   "private": false,
   "files": [
     "bin",
