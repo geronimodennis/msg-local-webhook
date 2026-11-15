@@ -189,12 +189,21 @@ export async function readConversationMessages(page, messageCount = 10, offset =
 }
 
 async function scrollConversationOlder(page) {
-  await page.evaluate(() => {
+  const before = await page.evaluate(() => {
     const main = document.querySelector('[role="main"]');
-    const scrollable = [main, ...main?.querySelectorAll("*") || []]
-      .find((element) => element && element.scrollHeight > element.clientHeight + 20);
-    if (scrollable) scrollable.scrollTop = 0;
+    const scrollables = [main, ...main?.querySelectorAll("*") || []]
+      .filter((element) => element && element.scrollHeight > element.clientHeight + 20)
+      .sort((a, b) =>
+        (b.scrollHeight - b.clientHeight) - (a.scrollHeight - a.clientHeight)
+      );
+    const scrollable = scrollables[0];
+    if (!scrollable) return null;
+    const oldTop = scrollable.scrollTop;
+    scrollable.scrollTop = Math.max(0, oldTop - Math.max(400, scrollable.clientHeight * 0.85));
+    scrollable.dispatchEvent(new Event("scroll", { bubbles: true }));
+    return { oldTop, newTop: scrollable.scrollTop };
   });
+  if (!before) return;
   await page.waitForTimeout(750);
 }
 
