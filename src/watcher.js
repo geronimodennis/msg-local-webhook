@@ -114,15 +114,24 @@ export function createWatcher({
         chatbotLog("is composing a message");
         try {
           let visionImage;
+          let visionPath;
           if (config.chatbotVision) {
             try {
-              visionImage = (await captureConversationImage(page)).imageUrl;
+              const captured = await captureConversationImage(
+                page,
+                config.chatbotVisionDumpDirectory
+              );
+              visionImage = captured.imageUrl;
+              visionPath = captured.path;
             } catch (error) {
               logger.warn(`[watcher] vision capture unavailable: ${error.message}`);
             }
           }
           chatbotLog(`historical context: ${cache.context?.length || 0} characters`);
-          chatbotLog(`vision input: ${visionImage ? "attached" : "not attached"}`);
+          chatbotLog(
+            `vision input: ${visionImage ? "attached" : "not attached"}` +
+            (visionPath ? `; dumped to ${visionPath}` : "")
+          );
           replyBody = await generateReply(
             {
               ...message,

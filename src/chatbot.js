@@ -108,6 +108,7 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
     : (config.chatbotVision ? 2 : 1);
   let calls = 0;
   let requestNumber = 0;
+  tools.visionInput = Boolean(message.visionImage);
   tools.onEvent?.({
     type: "context",
     model: config.chatbotModel,
@@ -228,7 +229,12 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
 
 function forcedToolChoice(config, tools, enabledTools) {
   const available = new Set(enabledTools.map((tool) => tool.function.name));
-  const name = config.chatbotRescanBeforeReply &&
+  const name = config.chatbotVision &&
+    tools.visionInput &&
+    !tools.visionRequested &&
+    available.has("inspect_current_conversation")
+    ? "inspect_current_conversation"
+    : config.chatbotRescanBeforeReply &&
     !tools.rescanRequested &&
     available.has("rescan_conversation")
     ? "rescan_conversation"
