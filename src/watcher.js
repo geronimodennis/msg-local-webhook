@@ -37,6 +37,7 @@ export function createWatcher({
     const candidates = inboxCandidates.length ? inboxCandidates : openCandidates;
     const currentTime = now();
     let replied = 0;
+    let queued = 0;
 
     for (const candidate of candidates) {
       const stored = stateStore.get(candidate.id);
@@ -64,6 +65,12 @@ export function createWatcher({
         userName: config.userName,
         mentionPattern: config.mentionPattern
       })) continue;
+      queued++;
+
+      if (inboxCandidates.length && !(await isStillUnread(page, candidate.id))) {
+        logger.log(`[watcher] skipped ${candidate.id}: message is no longer unread`);
+        continue;
+      }
 
       if (inboxCandidates.length) await openInboxCandidate(page, candidate.threadName);
       let replyBody = config.replyText;
@@ -143,7 +150,7 @@ export function createWatcher({
 
     logger.log(
       `[watcher] ${new Date().toISOString()} ${snapshot.url} ` +
-      `messages=${candidates.length} replied=${replied} dryRun=${config.dryRun}`
+      `messages=${candidates.length} queued=${queued} replied=${replied} dryRun=${config.dryRun}`
     );
     return { snapshot, candidates, replied };
   }
@@ -166,6 +173,11 @@ export function createWatcher({
   }
 
   return { start, stop, tick, sendReply };
+}
+
+async function isStillUnread(page, messageId) {
+  const candidates = await readInboxCandidates(page);
+  return candidates.some((candidate) => candidate.id === messageId && candidate.unread);
 }
 
 function matchesConfiguredMention(text, config) {
