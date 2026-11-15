@@ -32,7 +32,7 @@ Keep `DRY_RUN=true` for the first test. Set `DRY_RUN=false` only after confirmin
 After publishing the package, install the command globally:
 
 ```powershell
-npm.cmd install --global local-messenger-idle-assistant
+npm.cmd install --global localwebhook
 localwebhook --for messenger --init
 ```
 
