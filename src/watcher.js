@@ -81,6 +81,7 @@ export function createWatcher({
           logger[level](`[chatbot] ${message}`);
         };
         const previousMessages = await readConversationMessages(page, config.chatbotContextMessages);
+        const scannedMessages = new Set(previousMessages);
         try {
           cache = await conversationCache.update(candidate.id, {
             threadName: candidate.threadName,
@@ -124,18 +125,25 @@ export function createWatcher({
                 }
               },
               rescanConversation: async (messageCount, offset) => {
-                const older = await readConversationMessages(page, messageCount, offset);
+                let older = [];
+                let scanOffset = offset;
+                for (let attempt = 0; attempt < 4 && !older.length; attempt++) {
+                  const pageMessages = await readConversationMessages(page, messageCount, scanOffset);
+                  older = pageMessages.filter((content) => !scannedMessages.has(content));
+                  scanOffset += messageCount;
+                }
+                for (const content of older) scannedMessages.add(content);
                 await dumpRescan(
                   config.chatbotRescanDumpDirectory,
                   candidate.id,
                   candidate.threadName,
-                  offset,
+                  scanOffset - messageCount,
                   older
                 );
                 await conversationCache.update(candidate.id, {
                   threadName: candidate.threadName,
                   exchanges: older.map((content, index) => ({
-                    key: `rescan:${offset}:${index}:${content}`,
+                    key: `rescan:${scanOffset - messageCount}:${index}:${content}`,
                     role: "conversation",
                     content
                   }))
@@ -143,8 +151,8 @@ export function createWatcher({
                 return {
                   messageCount: older.length,
                   content: older.length
-                    ? `Older conversation messages ${offset + 1}-${offset + older.length}:\n${older.join("\n")}`
-                    : "No older conversation messages were found."
+                    ? `Older conversation messages around offset ${scanOffset - messageCount} (${older.length} messages):\n${older.join("\n")}`
+                    : "No additional older conversation messages were found after scanning deeper."
                 };
               }
             }

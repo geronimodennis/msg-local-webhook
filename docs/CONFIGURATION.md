@@ -60,6 +60,7 @@ The initial scan uses the newest `CHATBOT_CONTEXT_MESSAGES` messages. When `CHAT
 - offset `60`: messages 61–80
 
 Each retrieved older page is added to the per-message cache. The model decides when the existing context is sufficient; it should stop scanning once it has enough relevant context.
+Messenger may return overlapping virtualized pages; the watcher deduplicates timestamped message entries and automatically probes deeper offsets when a requested page contains no new messages.
 
 The `.cache/` directory is local runtime data and is excluded from Git.
 
