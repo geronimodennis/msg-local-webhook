@@ -26,6 +26,10 @@ Copy `.env.example` to `.env` and edit the values below. The watcher reloads the
 | `CHATBOT_API_KEY` | Token or empty | Optional bearer token for the chatbot endpoint. |
 | `CHATBOT_MODEL` | Model name | Model sent to the chatbot endpoint. |
 | `CHATBOT_TEMPERATURE` | Number, normally `0` to `2` | Generation randomness. |
+| `CHATBOT_CONTEXT_MAX_CHARS` | Positive number | Maximum characters from the latest previous-conversation chunk sent to the chatbot. |
+| `CHATBOT_WEB_ACCESS` | `true` or `false` | Enables the chatbot's `web_search` and `fetch_url` tools; default `false`. |
+| `CHATBOT_WEB_MAX_CHARS` | Positive number | Maximum characters returned from each web tool; default `8000`. |
+| `CHATBOT_WEB_MAX_CALLS` | Positive number, capped at 5 | Maximum web-tool calls per reply; default `3`. |
 | `CHATBOT_SYSTEM_PROMPT` | Any text | System instruction for generated replies. The current sender and incoming message are added separately for every request. |
 | `MESSAGE_SELECTOR` | CSS selector | Selector for rendered message elements; Facebook may change this. |
 | `COMPOSER_SELECTOR` | CSS selector for a textarea/contenteditable | Selector used to type replies. |

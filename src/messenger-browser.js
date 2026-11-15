@@ -160,6 +160,11 @@ export async function showTyping(page, selector) {
   await composer.fill("…");
 }
 
+export async function readConversationContext(page, maxChars = 6_000) {
+  const text = await page.locator('[role="main"]').innerText().catch(() => "");
+  return text.trim().slice(-maxChars);
+}
+
 async function countSentReplies(page, text) {
   return page.evaluate((replyText) => [...document.querySelectorAll("*")]
     .filter((node) => {

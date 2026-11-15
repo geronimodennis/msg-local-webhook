@@ -1,6 +1,7 @@
 import {
   inspectMessenger,
   openInboxCandidate,
+  readConversationContext,
   readInboxCandidates,
   readMessageCandidates,
   returnToInbox,
@@ -61,9 +62,13 @@ export function createWatcher({
       if (inboxCandidates.length) await openInboxCandidate(page, candidate.threadName);
       let replyBody = config.replyText;
       if (config.replyMode === "chatbot") {
+        const conversationContext = await readConversationContext(
+          page,
+          config.chatbotContextMaxChars
+        );
         if (!config.dryRun) await showTyping(page, config.composerSelector);
         try {
-          replyBody = await generateReply(message, config);
+          replyBody = await generateReply({ ...message, conversationContext }, config);
         } catch (error) {
           logger.error(`[watcher] chatbot failed; using fallback reply: ${error.message}`);
           replyBody = config.chatbotFallbackText;
