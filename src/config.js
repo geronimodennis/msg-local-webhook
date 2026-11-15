@@ -33,6 +33,9 @@ export function loadConfig(env = process.env) {
     replyPrefix: source.REPLY_PREFIX || "[DG's AI assistant]:",
     replyText: source.REPLY_TEXT || "I’m away right now and will get back to you when I can.",
     replyMode: source.REPLY_MODE === "chatbot" ? "chatbot" : "static",
+    chatbotFallbackText: source.CHATBOT_FALLBACK_TEXT ||
+      source.REPLY_TEXT ||
+      "I’m away right now and will get back to you when I can.",
     chatbotApiUrl: source.CHATBOT_API_URL || "",
     chatbotApiKey: source.CHATBOT_API_KEY || "",
     chatbotModel: source.CHATBOT_MODEL || "default",

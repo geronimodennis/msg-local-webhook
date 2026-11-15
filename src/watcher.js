@@ -63,8 +63,8 @@ export function createWatcher({
         try {
           replyBody = await generateReply(message, config);
         } catch (error) {
-          logger.error(`[watcher] chatbot reply skipped: ${error.message}`);
-          continue;
+          logger.error(`[watcher] chatbot failed; using fallback reply: ${error.message}`);
+          replyBody = config.chatbotFallbackText;
         }
       }
       const text = formatReply(message, config.replyPrefix, replyBody);
