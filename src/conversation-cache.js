@@ -20,13 +20,14 @@ export function createConversationCache({
   }
 
   async function read(messageId) {
+    const preferred = await fileFor(messageId, compression);
     try {
-      const compressed = await readFile(await fileFor(messageId));
-      return JSON.parse((await gunzipAsync(compressed)).toString("utf8"));
+      return await readCacheFile(preferred, compression);
     } catch (error) {
       if (error.code === "ENOENT") {
+        const alternate = await fileFor(messageId, !compression);
         try {
-          return JSON.parse(await readFile(await fileFor(messageId, false), "utf8"));
+          return await readCacheFile(alternate, !compression);
         } catch (legacyError) {
           if (legacyError.code === "ENOENT") return { messageId, exchanges: [] };
           throw legacyError;
@@ -132,6 +133,13 @@ export function createConversationCache({
   }
 
   return { read, update, readThread };
+}
+
+async function readCacheFile(path, compressed) {
+  const data = await readFile(path);
+  return JSON.parse(
+    (compressed ? await gunzipAsync(data) : data).toString("utf8")
+  );
 }
 
 export async function dumpRescan(directory, messageId, threadName, offset, messages) {
