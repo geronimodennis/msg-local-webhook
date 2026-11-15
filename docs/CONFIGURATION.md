@@ -51,7 +51,8 @@ Group messages are eligible only when the mention matches the detected account n
 
 Each incoming message gets a cache file in `.cache/`. With compression disabled, the cache is readable JSON. The cache stores the newest conversation exchanges and the assistant's confirmed replies. `CHATBOT_CONTEXT_MESSAGES` controls how many recent Messenger messages are added on each response. When the cache exceeds `CHATBOT_CACHE_MAX_CHARS`, the chatbot summarizes the conversation while preserving important facts, questions, commitments, dates, and chronological meaning, then replaces the oversized cache. Both JSON and gzip cache files remain readable.
 
-Cache identity uses Messenger's conversation ID from `/messages/t/<conversation-id>`, which is more reliable than a contact name or message preview. Individual message IDs/text are still used for reply deduplication.
+Cache identity combines Messenger's conversation ID and display name:
+`<conversation-id>|<thread-name>`. For example: `100071871884140|Randomguy Fivehundredseventeen`. The combination is hashed for the cache filename. Individual message IDs/text are still used for reply deduplication.
 
 ## Deep conversation scanning
 

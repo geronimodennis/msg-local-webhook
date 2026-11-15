@@ -77,6 +77,9 @@ export function createWatcher({
       let replyBody = config.replyText;
       let cache;
       if (config.replyMode === "chatbot") {
+        const cacheKey = [candidate.conversationId, candidate.threadName]
+          .filter(Boolean)
+          .join("|") || candidate.id;
         const chatbotLog = (message, level = "log") => {
           if (!config.chatbotVerboseLogging) return;
           logger[level](`[chatbot] ${message}`);
@@ -84,7 +87,6 @@ export function createWatcher({
         const previousMessages = await readConversationMessages(page, config.chatbotContextMessages);
         const scannedMessages = new Set(previousMessages);
         try {
-          const cacheKey = candidate.conversationId || candidate.id;
           cache = await conversationCache.update(cacheKey, {
             threadName: candidate.threadName,
             exchanges: [
@@ -142,7 +144,7 @@ export function createWatcher({
                   scanOffset - messageCount,
                   older
                 );
-          await conversationCache.update(candidate.conversationId || candidate.id, {
+          await conversationCache.update(cacheKey, {
                   threadName: candidate.threadName,
                   exchanges: older.map((content, index) => ({
                     key: `rescan:${scanOffset - messageCount}:${index}:${content}`,
@@ -176,7 +178,7 @@ export function createWatcher({
         stateStore.markReplied(candidate.id, currentTime);
         if (cache) {
           try {
-            await conversationCache.update(candidate.id, {
+            await conversationCache.update(cacheKey, {
               threadName: candidate.threadName,
               exchanges: [{
                 key: `assistant:${currentTime}`,
