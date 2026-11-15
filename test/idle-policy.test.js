@@ -55,3 +55,32 @@ test("conversation cache retains twenty distinct context messages with compact k
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test("conversation cache preserves earlier turns for the next reply", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "msg-local-webhook-memory-"));
+  try {
+    const cache = createConversationCache({
+      directory,
+      compression: false,
+      maxChars: 100_000
+    });
+    await cache.update("conversation-2|Test contact", {
+      threadName: "Test contact",
+      exchanges: [
+        { key: "message-1", role: "conversation", content: "My favorite color is blue." },
+        { key: "reply-1", role: "assistant", content: "I’ll remember that your favorite color is blue." }
+      ]
+    });
+    const next = await cache.update("conversation-2|Test contact", {
+      threadName: "Test contact",
+      exchanges: [
+        { key: "message-2", role: "conversation", content: "What color do I like?" }
+      ]
+    });
+
+    assert.match(next.context, /favorite color is blue/);
+    assert.match(next.context, /What color do I like/);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});

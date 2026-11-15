@@ -182,21 +182,24 @@ export function createWatcher({
       } else {
         await sendReply(page, text, config.composerSelector);
         stateStore.markReplied(candidate.id, currentTime);
-        if (cache) {
-          try {
-            await conversationCache.update(cacheKey, {
-              threadName: candidate.threadName,
-              exchanges: [{
-                key: exchangeKey("assistant", text, String(currentTime)),
-                role: "assistant",
-                content: text
-              }]
-            });
-          } catch (error) {
-            logger.error(`[watcher] assistant cache update failed: ${error.message}`);
-          }
-        }
         replied++;
+      }
+      // Dry-run does not send to Messenger, but it must still retain the
+      // generated reply so the next chatbot turn has conversational memory.
+      // Live mode reaches this point only after Messenger confirms the send.
+      if (cache) {
+        try {
+          await conversationCache.update(cacheKey, {
+            threadName: candidate.threadName,
+            exchanges: [{
+              key: exchangeKey("assistant", text, candidate.id),
+              role: "assistant",
+              content: text
+            }]
+          });
+        } catch (error) {
+          logger.error(`[watcher] assistant cache update failed: ${error.message}`);
+        }
       }
     }
     await stateStore.save();
