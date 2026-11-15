@@ -68,9 +68,7 @@ export function createConversationCache({
         for (const exchange of entry.cache.exchanges) merged.set(exchange.key, exchange);
       }
       for (const exchange of cache.exchanges) merged.set(exchange.key, exchange);
-      context = formatExchanges([...merged.values()].sort((a, b) =>
-        String(a.timestamp).localeCompare(String(b.timestamp))
-      ));
+        context = formatExchanges([...merged.values()].sort(compareExchanges));
     } else {
       context = formatExchanges(cache.exchanges);
     }
@@ -163,9 +161,12 @@ export async function dumpRescan(directory, messageId, threadName, offset, messa
 }
 
 function formatExchanges(exchanges) {
-  return exchanges.map((exchange) =>
-    `[${exchange.role}] ${exchange.content}`
-  ).join("\n");
+  return exchanges.map((exchange) => {
+    const role = exchange.role === "conversation"
+      ? (/\bby\s+You\s*:/iu.test(exchange.content) ? "assistant" : "user")
+      : exchange.role;
+    return `[${role}] ${exchange.content}`;
+  }).join("\n");
 }
 
 function stableExchangeKey(exchange) {
@@ -186,4 +187,10 @@ function messageTimestamp(content, fallback) {
   if (match[3].toUpperCase() === "PM") hour += 12;
   date.setHours(hour, Number(match[2]), 0, 0);
   return date.toISOString();
+}
+
+function compareExchanges(a, b) {
+  const timestampDifference = String(a.timestamp).localeCompare(String(b.timestamp));
+  if (timestampDifference) return timestampDifference;
+  return messageTimestamp(a.content, "").localeCompare(messageTimestamp(b.content, ""));
 }

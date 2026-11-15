@@ -102,6 +102,7 @@ test("conversation cache orders Messenger messages by their displayed time", asy
     });
 
     assert.ok(result.context.indexOf("Gundam 00") < result.context.indexOf("Current question"));
+    assert.match(result.context, /\[user\].*Gundam 00/);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
