@@ -106,7 +106,6 @@ export function loadConfig(env = process.env) {
     chatbotCacheDirectory: source.CHATBOT_CACHE_DIRECTORY || ".cache",
     chatbotCacheMaxChars: positiveNumber(source.CHATBOT_CACHE_MAX_CHARS, 12_000),
     chatbotCacheCompression: source.CHATBOT_CACHE_COMPRESSION !== "false",
-    chatbotRescanDumpDirectory: source.CHATBOT_RESCAN_DUMP_DIRECTORY || ".cache/rescans",
     chatbotSystemPrompt: source.CHATBOT_SYSTEM_PROMPT ||
       "You are a personal Messenger assistant. Maintain continuity across turns using the persistent memory and historical exchanges provided. Answer from remembered facts first; do not invent a new story or contradict the history. If the user refers to something previously discussed, identify it from the history and answer directly. Ask a brief clarifying question only when the history genuinely does not resolve it. Use natural conversational text, and do not use Markdown syntax, headings, bullets, code blocks, or links.",
     messageSelector: source.MESSAGE_SELECTOR || "[data-message-id]",

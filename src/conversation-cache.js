@@ -146,22 +146,6 @@ async function readCacheFile(path, compressed) {
   );
 }
 
-export async function dumpRescan(directory, messageId, threadName, offset, messages) {
-  await mkdir(directory, { recursive: true });
-  const key = createHash("sha256").update(String(messageId)).digest("hex");
-  const file = join(directory, `${key}-offset-${offset}.txt`);
-  const content = [
-    `Thread: ${threadName || "(unknown)"}`,
-    `Message ID: ${messageId}`,
-    `Range: ${offset + 1}-${offset + messages.length}`,
-    `Scanned: ${new Date().toISOString()}`,
-    "",
-    messages.join("\n\n")
-  ].join("\n");
-  await writeFile(file, `${content}\n`, "utf8");
-  return file;
-}
-
 function formatExchanges(exchanges) {
   return exchanges.map((exchange) => {
     const role = exchange.role === "conversation"
