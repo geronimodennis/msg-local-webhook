@@ -1,3 +1,4 @@
 node_modules/
 .env
 .watcher-state.json
+.cache/

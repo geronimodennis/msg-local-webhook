@@ -1,7 +1,7 @@
 import {
   inspectMessenger,
   openInboxCandidate,
-  readConversationContext,
+  readConversationMessages,
   readInboxCandidates,
   readMessageCandidates,
   returnToInbox,
@@ -10,14 +10,20 @@ import {
 } from "./messenger-browser.js";
 import { shouldReply, formatReply } from "./idle-policy.js";
 import { createStateStore } from "./state-store.js";
-import { generateReply } from "./chatbot.js";
+import { generateReply, summarizeConversation } from "./chatbot.js";
+import { createConversationCache } from "./conversation-cache.js";
 
 export function createWatcher({
   page,
   config,
   now = () => Date.now(),
   logger = console,
-  stateStore = createStateStore()
+  stateStore = createStateStore(),
+  conversationCache = createConversationCache({
+    directory: config.chatbotCacheDirectory,
+    maxChars: config.chatbotCacheMaxChars,
+    summarize: (context) => summarizeConversation(context, config)
+  })
 }) {
   let stopped = false;
 
@@ -61,14 +67,20 @@ export function createWatcher({
 
       if (inboxCandidates.length) await openInboxCandidate(page, candidate.threadName);
       let replyBody = config.replyText;
+      let cache;
       if (config.replyMode === "chatbot") {
-        const conversationContext = await readConversationContext(
-          page,
-          config.chatbotContextMessages
-        );
+        const previousMessages = await readConversationMessages(page, config.chatbotContextMessages);
+        cache = await conversationCache.update(candidate.id, [
+          ...previousMessages.map((content, index) => ({
+            key: `context:${index}:${content}`,
+            role: "conversation",
+            content
+          })),
+          { key: `incoming:${candidate.id}`, role: "incoming", content: message.text }
+        ]);
         if (!config.dryRun) await showTyping(page, config.composerSelector);
         try {
-          replyBody = await generateReply({ ...message, conversationContext }, config);
+          replyBody = await generateReply({ ...message, conversationContext: cache.context }, config);
         } catch (error) {
           logger.error(`[watcher] chatbot failed; using fallback reply: ${error.message}`);
           replyBody = config.chatbotFallbackText;
@@ -80,6 +92,13 @@ export function createWatcher({
       } else {
         await sendReply(page, text, config.composerSelector);
         stateStore.markReplied(candidate.id, currentTime);
+        if (cache) {
+          await conversationCache.update(candidate.id, [{
+            key: `assistant:${currentTime}`,
+            role: "assistant",
+            content: text
+          }]);
+        }
         replied++;
       }
     }

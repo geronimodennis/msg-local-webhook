@@ -161,6 +161,11 @@ export async function showTyping(page, selector) {
 }
 
 export async function readConversationContext(page, messageCount = 10) {
+  return (await readConversationMessages(page, messageCount))
+    .join("\n");
+}
+
+export async function readConversationMessages(page, messageCount = 10) {
   const messages = await page.locator('[role="main"]').evaluate((main) => {
     const seen = new Set();
     return [...main.querySelectorAll("*")]
@@ -173,8 +178,9 @@ export async function readConversationContext(page, messageCount = 10) {
       });
   }).catch(() => []);
 
-  if (messages.length) return messages.slice(-messageCount).join("\n");
-  return (await page.locator('[role="main"]').innerText().catch(() => "")).trim();
+  if (messages.length) return messages.slice(-messageCount);
+  const fallback = (await page.locator('[role="main"]').innerText().catch(() => "")).trim();
+  return fallback ? [fallback] : [];
 }
 
 async function countSentReplies(page, text) {

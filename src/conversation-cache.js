@@ -1,0 +1,66 @@
+import { createHash } from "node:crypto";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+
+export function createConversationCache({
+  directory = ".cache",
+  maxChars = 12_000,
+  summarize = async (context) => context
+} = {}) {
+  async function fileFor(messageId) {
+    await mkdir(directory, { recursive: true });
+    const key = createHash("sha256").update(String(messageId)).digest("hex");
+    return join(directory, `${key}.json`);
+  }
+
+  async function read(messageId) {
+    try {
+      return JSON.parse(await readFile(await fileFor(messageId), "utf8"));
+    } catch (error) {
+      if (error.code === "ENOENT") return { messageId, exchanges: [] };
+      throw error;
+    }
+  }
+
+  async function update(messageId, exchanges) {
+    const cache = await read(messageId);
+    const known = new Set(cache.exchanges.map((exchange) => exchange.key));
+
+    for (const exchange of exchanges) {
+      const key = exchange.key || `${exchange.role}:${exchange.content}`;
+      if (!exchange.content?.trim() || known.has(key)) continue;
+      cache.exchanges.push({
+        key,
+        role: exchange.role || "conversation",
+        content: exchange.content.trim(),
+        timestamp: exchange.timestamp || new Date().toISOString()
+      });
+      known.add(key);
+    }
+
+    let context = formatExchanges(cache.exchanges);
+    if (context.length > maxChars) {
+      const summary = await summarize(context);
+      cache.exchanges = [{
+        key: `summary:${Date.now()}`,
+        role: "summary",
+        content: summary.trim(),
+        timestamp: new Date().toISOString()
+      }];
+      context = formatExchanges(cache.exchanges);
+    }
+
+    cache.updatedAt = new Date().toISOString();
+    cache.context = context;
+    await writeFile(await fileFor(messageId), `${JSON.stringify(cache, null, 2)}\n`, "utf8");
+    return cache;
+  }
+
+  return { read, update };
+}
+
+function formatExchanges(exchanges) {
+  return exchanges.map((exchange) =>
+    `[${exchange.role}] ${exchange.content}`
+  ).join("\n");
+}

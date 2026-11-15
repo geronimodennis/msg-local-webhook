@@ -104,6 +104,31 @@ export async function generateReply(message, config, fetchImpl = fetch) {
   }
 }
 
+export async function summarizeConversation(context, config, fetchImpl = fetch) {
+  const response = await fetchImpl(config.chatbotApiUrl, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      ...(config.chatbotApiKey ? { authorization: `Bearer ${config.chatbotApiKey}` } : {})
+    },
+    body: JSON.stringify({
+      model: config.chatbotModel,
+      messages: [
+        {
+          role: "system",
+          content: "Summarize this Messenger conversation for a future reply. Preserve important facts, commitments, questions, names, dates, and unresolved matters in chronological order. Return plain text only."
+        },
+        { role: "user", content: context }
+      ],
+      temperature: 0.1
+    })
+  });
+  if (!response.ok) throw new Error(`Conversation summary failed with HTTP ${response.status}.`);
+  const content = (await response.json()).choices?.[0]?.message?.content?.trim();
+  if (!content) throw new Error("Conversation summary returned no text.");
+  return content;
+}
+
 async function executeWebTool(name, args, config) {
   if (name === "web_search") return searchWeb(args.query, config.chatbotWebMaxChars);
   if (name === "fetch_url") return fetchUrl(args.url, config.chatbotWebMaxChars);
