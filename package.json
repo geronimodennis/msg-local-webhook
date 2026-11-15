@@ -1,6 +1,6 @@
 {
-  "name": "@geronimodennis/localwebhook",
-  "version": "0.1.4",
+  "name": "@geronimodennis/msg-local-webhook",
+  "version": "0.1.5",
   "private": false,
   "files": [
     "bin",
@@ -13,6 +13,7 @@
   },
   "bin": {
     "localwebhook": "bin/localwebhook.js",
+    "msg-local-webhook": "bin/localwebhook.js",
     "messenger-idle-assistant": "bin/messenger-idle-assistant.js"
   },
   "type": "module",

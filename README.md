@@ -32,14 +32,14 @@ Keep `DRY_RUN=true` for the first test. Set `DRY_RUN=false` only after confirmin
 After publishing the package, install the command globally:
 
 ```powershell
-npm.cmd install --global @geronimodennis/localwebhook
-localwebhook --for messenger --init
+npm.cmd install --global @geronimodennis/msg-local-webhook
+msg-local-webhook --for messenger --init
 ```
 
 Edit the generated `.env`, then start the watcher from the same directory:
 
 ```powershell
-localwebhook --for messenger --start
+msg-local-webhook --for messenger --start
 ```
 
 The `.env` file is read from the directory where the command is run. Configure idle timing, direct contacts, reply text, and safety mode in `.env`. See [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) for all options.

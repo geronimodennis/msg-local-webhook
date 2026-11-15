@@ -3,7 +3,7 @@
 This project locally simulates a webhook for Messenger through the browser. The CLI is designed to expand to other messaging apps later:
 
 ```powershell
-localwebhook --for messenger --start
+msg-local-webhook --for messenger --start
 ```
 
 Copy `.env.example` to `.env` and edit the values below. The watcher reloads these settings automatically while running. Browser connection settings require a restart.
