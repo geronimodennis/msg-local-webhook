@@ -154,6 +154,7 @@ export function createWatcher({
                 if (event.type === "tool_image") {
                   chatbotLog(
                     `tool image ${event.name}: ${event.url}` +
+                    (event.source ? `; source=${event.source}` : "") +
                     (event.path ? `; dumped to ${event.path}` : "")
                   );
                 }
@@ -293,8 +294,25 @@ function exchangeKey(role, content, suffix = "") {
 }
 
 async function captureConversationImage(page, dumpDirectory = "") {
-  const view = page.locator('[role="main"]').first();
-  const image = await view.screenshot({ type: "png" });
+  const imageLocator = page.locator('[role="main"] img');
+  const imageIndex = await imageLocator.evaluateAll((images) => {
+    const candidates = images.map((image, index) => {
+      const rect = image.getBoundingClientRect();
+      const visible = rect.width > 120 &&
+        rect.height > 120 &&
+        rect.bottom > 0 &&
+        rect.right > 0 &&
+        rect.top < window.innerHeight &&
+        rect.left < window.innerWidth;
+      return { index, area: rect.width * rect.height, visible };
+    }).filter((candidate) => candidate.visible);
+    candidates.sort((a, b) => b.area - a.area);
+    return candidates[0]?.index ?? -1;
+  }).catch(() => -1);
+  const target = imageIndex >= 0
+    ? imageLocator.nth(imageIndex)
+    : page.locator('[role="main"]').first();
+  const image = await target.screenshot({ type: "png" });
   let path;
   if (dumpDirectory) {
     await mkdir(dumpDirectory, { recursive: true });
@@ -303,7 +321,8 @@ async function captureConversationImage(page, dumpDirectory = "") {
   }
   return {
     imageUrl: `data:image/png;base64,${image.toString("base64")}`,
-    path
+    path,
+    source: imageIndex >= 0 ? "Messenger image attachment" : "conversation view"
   };
 }
 

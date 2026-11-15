@@ -89,7 +89,8 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
         type: "tool_image",
         name: "inspect_current_conversation",
         url: describeImageUrl(message.visionImage),
-        path: captured.path
+        path: captured.path,
+        source: captured.source
       });
     } catch (error) {
       tools.onEvent?.({
@@ -242,7 +243,8 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
           type: "tool_image",
           name,
           url: describeImageUrl(result.imageUrl),
-          path: result.dumpPath
+          path: result.dumpPath,
+          source: result.source
         });
         messages.push({
           role: "user",
@@ -335,8 +337,9 @@ async function executeWebTool(name, args, config, tools) {
     const captured = await tools.captureConversation({ dump: true });
     return {
       toolMessage: `Visual inspection completed for: ${args.reason || "the current conversation"}. The image is attached in the next message.`,
-      imageUrl: captured.imageUrl || captured,
-      dumpPath: captured.path
+          imageUrl: captured.imageUrl || captured,
+          dumpPath: captured.path,
+          source: captured.source
     };
   }
   return `Unknown tool: ${name}`;
