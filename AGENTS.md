@@ -11,4 +11,4 @@
 - Every reply must use the exact prefix `[DG's AI assistant]: <agent message>`.
 - Never deselect a conversation until Messenger exposes a confirmed `Message sent ... by You` receipt; then return to `/messages/t/`.
 - Keep `DRY_RUN=true` for testing; only `DRY_RUN=false` enables live sending.
-- Run `npm.cmd test` after changes; the package is published as `@geronimodennis/msg-local-webhook` and release versions must be bumped before npm publishing.
+- Run `npm.cmd test` after changes; the package is published as `msg-local-webhook` and release versions must be bumped before npm publishing.

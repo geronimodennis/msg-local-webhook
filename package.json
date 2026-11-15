@@ -1,6 +1,6 @@
 {
-  "name": "@geronimodennis/msg-local-webhook",
-  "version": "0.1.5",
+  "name": "msg-local-webhook",
+  "version": "0.1.6",
   "private": false,
   "files": [
     "bin",
