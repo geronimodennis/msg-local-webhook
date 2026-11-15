@@ -71,9 +71,9 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
   }
 
   const sender = message.threadName || "Messenger contact";
-  const currentMessage = [
+  const currentMessageText = [
     `You are responding to the current message from ${sender}.`,
-    "Use the previous conversation messages and assistant replies to maintain continuity. Remember facts, questions, decisions, and unresolved topics from that context; do not claim that each chat starts fresh when context is present. If context is incomplete, call rescan_conversation with offset 20, then 40, then 60 as needed before replying. Reply only to the current message and do not invent missing context.",
+    "Use the previous conversation messages and assistant replies to maintain continuity. Remember facts, questions, decisions, and unresolved topics from that context; do not claim that each chat starts fresh when context is present. If an image is attached, inspect it before replying. If context is incomplete, call rescan_conversation with offset 20, then 40, then 60 as needed before replying. Reply only to the current message and do not invent missing context.",
     "",
     "Previous conversation context:",
     message.conversationContext || "(No previous conversation context is available.)",
@@ -81,6 +81,12 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
     "Current incoming message:",
     message.text
   ].join("\n");
+  const currentMessage = message.visionImage
+    ? [
+        { type: "text", text: currentMessageText },
+        { type: "image_url", image_url: { url: message.visionImage } }
+      ]
+    : currentMessageText;
 
   const messages = [
     { role: "system", content: config.chatbotSystemPrompt },

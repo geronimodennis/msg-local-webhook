@@ -111,8 +111,20 @@ export function createWatcher({
         if (!config.dryRun) await showTyping(page, config.composerSelector);
         chatbotLog("is composing a message");
         try {
+          let visionImage;
+          if (config.chatbotVision) {
+            try {
+              visionImage = await captureConversationImage(page);
+            } catch (error) {
+              logger.warn(`[watcher] vision capture unavailable: ${error.message}`);
+            }
+          }
           replyBody = await generateReply(
-            { ...message, conversationContext: cache.context },
+            {
+              ...message,
+              conversationContext: cache.context,
+              visionImage
+            },
             config,
             fetch,
             {
@@ -166,9 +178,7 @@ export function createWatcher({
                 };
               },
               captureConversation: async () => {
-                const view = page.locator('[role="main"]').first();
-                const image = await view.screenshot({ type: "png" });
-                return `data:image/png;base64,${image.toString("base64")}`;
+                return captureConversationImage(page);
               }
             }
           );
@@ -263,6 +273,12 @@ function exchangeKey(role, content, suffix = "") {
     .digest("hex")
     .slice(0, 20);
   return `${role}:${digest}`;
+}
+
+async function captureConversationImage(page) {
+  const view = page.locator('[role="main"]').first();
+  const image = await view.screenshot({ type: "png" });
+  return `data:image/png;base64,${image.toString("base64")}`;
 }
 
 function escapeRegExp(value) {
