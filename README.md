@@ -2,6 +2,46 @@
 
 This is a local browser watcher for an already-open Facebook Messenger session. It does not use Meta webhooks or expose a public endpoint.
 
+## Install and run from the repository
+
+```powershell
+git clone https://github.com/geronimodennis/local-webhook-fb-messenger.git
+cd local-webhook-fb-messenger
+npm.cmd install
+Copy-Item .env.example .env
+```
+
+Start Chrome with remote debugging, log in to Facebook, and open Messenger:
+
+```powershell
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" `
+  --remote-debugging-port=9222 `
+  --user-data-dir="$env:LOCALAPPDATA\Google\Chrome\MessengerWatcherProfile"
+```
+
+Then start the watcher in a second terminal:
+
+```powershell
+npm.cmd start
+```
+
+Keep `DRY_RUN=true` for the first test. Set `DRY_RUN=false` only after confirming detection works.
+
+## Install from npm
+
+After publishing the package:
+
+```powershell
+mkdir messenger-idle-assistant
+cd messenger-idle-assistant
+npm.cmd init -y
+npm.cmd install local-messenger-idle-assistant
+Copy-Item node_modules\local-messenger-idle-assistant\.env.example .env
+node node_modules\local-messenger-idle-assistant\src\index.js
+```
+
+The `.env` file is read from the directory where the command is run. Configure idle timing, direct contacts, reply text, and safety mode in `.env`. See [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) for all options.
+
 ## Setup
 
 1. Install dependencies with `npm.cmd install`.
