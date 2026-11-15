@@ -138,11 +138,17 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
         args = {};
       }
       const result = await executeWebTool(name, args, config, tools);
-      tools.onEvent?.({ type: "tool_result", name, characters: result.length });
+      const content = typeof result === "string" ? result : result.content;
+      tools.onEvent?.({
+        type: "tool_result",
+        name,
+        characters: content.length,
+        messageCount: typeof result === "string" ? undefined : result.messageCount
+      });
       messages.push({
         role: "tool",
         tool_call_id: toolCall.id,
-        content: result
+        content
       });
       calls++;
     }

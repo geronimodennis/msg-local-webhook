@@ -111,7 +111,10 @@ export function createWatcher({
                 if (event.type === "response") chatbotLog(`response #${event.number}: HTTP ${event.status}`);
                 if (event.type === "tool") chatbotLog(`is using tool: ${event.name}`);
                 if (event.type === "tool_result") {
-                  chatbotLog(`tool result: ${event.name} (${event.characters} characters)`);
+                  const size = event.messageCount
+                    ? `${event.messageCount} messages`
+                    : `${event.characters} characters`;
+                  chatbotLog(`tool result: ${event.name} (${size})`);
                 }
                 if (event.type === "retry") {
                   chatbotLog(`retrying after ${event.toolCount} tool call(s)`);
@@ -130,9 +133,12 @@ export function createWatcher({
                     content
                   }))
                 });
-                return older.length
-                  ? `Older conversation messages ${offset + 1}-${offset + older.length}:\n${older.join("\n")}`
-                  : "No older conversation messages were found.";
+                return {
+                  messageCount: older.length,
+                  content: older.length
+                    ? `Older conversation messages ${offset + 1}-${offset + older.length}:\n${older.join("\n")}`
+                    : "No older conversation messages were found."
+                };
               }
             }
           );
