@@ -50,6 +50,21 @@ const webTools = [
   }
 ];
 
+const visionTool = {
+  type: "function",
+  function: {
+    name: "inspect_current_conversation",
+    description: "Inspect the currently open Messenger conversation visually. Use this when the user asks about an image, photo, screenshot, visual attachment, object, or text in an image. The result is an image; only use it when the configured model supports vision.",
+    parameters: {
+      type: "object",
+      properties: {
+        reason: { type: "string", description: "What visual detail to inspect." }
+      },
+      required: ["reason"]
+    }
+  }
+};
+
 export async function generateReply(message, config, fetchImpl = fetch, tools = {}) {
   if (!config.chatbotApiUrl) {
     throw new Error("CHATBOT_API_URL is required when REPLY_MODE=chatbot.");
@@ -71,10 +86,15 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
     { role: "system", content: config.chatbotSystemPrompt },
     { role: "user", content: currentMessage }
   ];
-  const enabledTools = config.chatbotWebAccess
-    ? webTools
-    : webTools.filter((tool) => tool.function.name === "rescan_conversation");
-  const maxCalls = config.chatbotWebAccess ? (config.chatbotWebMaxCalls || 3) : 1;
+  const enabledTools = [
+    ...(config.chatbotWebAccess
+      ? webTools
+      : webTools.filter((tool) => tool.function.name === "rescan_conversation")),
+    ...(config.chatbotVision ? [visionTool] : [])
+  ];
+  const maxCalls = config.chatbotWebAccess
+    ? (config.chatbotWebMaxCalls || 3)
+    : (config.chatbotVision ? 2 : 1);
   let calls = 0;
   let requestNumber = 0;
 
@@ -139,17 +159,29 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
       }
       const result = await executeWebTool(name, args, config, tools);
       const content = typeof result === "string" ? result : result.content;
+      const toolMessage = typeof result === "string"
+        ? result
+        : result.toolMessage || content;
       tools.onEvent?.({
         type: "tool_result",
         name,
-        characters: content.length,
+        characters: typeof toolMessage === "string" ? toolMessage.length : 0,
         messageCount: typeof result === "string" ? undefined : result.messageCount
       });
       messages.push({
         role: "tool",
         tool_call_id: toolCall.id,
-        content
+        content: toolMessage
       });
+      if (typeof result !== "string" && result.imageUrl) {
+        messages.push({
+          role: "user",
+          content: [
+            { type: "text", text: "Visual inspection result for the requested conversation view:" },
+            { type: "image_url", image_url: { url: result.imageUrl } }
+          ]
+        });
+      }
       calls++;
     }
   }
@@ -193,6 +225,13 @@ async function executeWebTool(name, args, config, tools) {
       args.message_count || config.chatbotContextMessages,
       args.offset ?? config.chatbotContextMessages
     );
+  }
+  if (name === "inspect_current_conversation") {
+    if (!tools.captureConversation) return "Visual inspection is unavailable.";
+    return {
+      toolMessage: `Visual inspection completed for: ${args.reason || "the current conversation"}. The image is attached in the next message.`,
+      imageUrl: await tools.captureConversation()
+    };
   }
   return `Unknown tool: ${name}`;
 }

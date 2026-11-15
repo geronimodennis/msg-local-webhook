@@ -164,6 +164,11 @@ export function createWatcher({
                     ? `Older conversation messages around offset ${scanOffset - messageCount} (${older.length} messages):\n${older.join("\n")}`
                     : "No additional older conversation messages were found after scanning deeper."
                 };
+              },
+              captureConversation: async () => {
+                const view = page.locator('[role="main"]').first();
+                const image = await view.screenshot({ type: "png" });
+                return `data:image/png;base64,${image.toString("base64")}`;
               }
             }
           );

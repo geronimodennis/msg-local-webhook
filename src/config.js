@@ -52,6 +52,7 @@ export function loadConfig(env = process.env) {
       ? Number(source.CHATBOT_TEMPERATURE)
       : 0.4,
     chatbotWebAccess: source.CHATBOT_WEB_ACCESS === "true",
+    chatbotVision: source.CHATBOT_VISION === "true",
     chatbotWebMaxChars: positiveNumber(source.CHATBOT_WEB_MAX_CHARS, 8_000),
     chatbotWebMaxCalls: Math.min(5, positiveNumber(source.CHATBOT_WEB_MAX_CALLS, 3)),
     chatbotContextMessages: Math.floor(positiveNumber(source.CHATBOT_CONTEXT_MESSAGES, 1)),
