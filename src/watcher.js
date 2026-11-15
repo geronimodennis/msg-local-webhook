@@ -69,6 +69,10 @@ export function createWatcher({
       let replyBody = config.replyText;
       let cache;
       if (config.replyMode === "chatbot") {
+        const chatbotLog = (message, level = "log") => {
+          if (!config.chatbotVerboseLogging) return;
+          logger[level](`[chatbot] ${message}`);
+        };
         const previousMessages = await readConversationMessages(page, config.chatbotContextMessages);
         try {
           cache = await conversationCache.update(candidate.id, {
@@ -87,18 +91,26 @@ export function createWatcher({
           cache = { context: previousMessages.join("\n") };
         }
         if (!config.dryRun) await showTyping(page, config.composerSelector);
+        chatbotLog("is composing a message");
         try {
           replyBody = await generateReply(
             { ...message, conversationContext: cache.context },
             config,
             fetch,
             {
+              onEvent: (event) => {
+                if (event.type === "tool") chatbotLog(`is using tool: ${event.name}`);
+              },
               rescanConversation: async (messageCount) =>
                 (await readConversationMessages(page, messageCount)).join("\n")
             }
           );
+          chatbotLog("composed a response");
         } catch (error) {
-          logger.error(`[watcher] chatbot failed; using fallback reply: ${error.message}`);
+          chatbotLog(
+            `error ${error.code || "UNKNOWN"}: ${error.message}; using fallback reply`,
+            "error"
+          );
           replyBody = config.chatbotFallbackText;
         }
       }

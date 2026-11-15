@@ -89,7 +89,9 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
     });
 
     if (!response.ok) {
-      throw new Error(`Chatbot request failed with HTTP ${response.status}.`);
+      const error = new Error(`Chatbot request failed with HTTP ${response.status}.`);
+      error.code = `HTTP_${response.status}`;
+      throw error;
     }
 
     const data = await response.json();
@@ -107,6 +109,7 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
     messages.push(assistant);
     for (const toolCall of toolCalls) {
       const name = toolCall.function?.name;
+      tools.onEvent?.({ type: "tool", name });
       let args;
       try {
         args = JSON.parse(toolCall.function?.arguments || "{}");
@@ -143,7 +146,11 @@ export async function summarizeConversation(context, config, fetchImpl = fetch) 
       temperature: 0.1
     })
   });
-  if (!response.ok) throw new Error(`Conversation summary failed with HTTP ${response.status}.`);
+  if (!response.ok) {
+    const error = new Error(`Conversation summary failed with HTTP ${response.status}.`);
+    error.code = `HTTP_${response.status}`;
+    throw error;
+  }
   const content = (await response.json()).choices?.[0]?.message?.content?.trim();
   if (!content) throw new Error("Conversation summary returned no text.");
   return content;

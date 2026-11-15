@@ -46,6 +46,7 @@ export function loadConfig(env = process.env) {
     chatbotApiUrl: chatbotEndpoint(source.CHATBOT_API_URL),
     chatbotApiKey: source.CHATBOT_API_KEY || "",
     chatbotModel: source.CHATBOT_MODEL || "default",
+    chatbotVerboseLogging: source.CHATBOT_VERBOSE_LOGGING !== "false",
     chatbotTemperature: Number.isFinite(Number(source.CHATBOT_TEMPERATURE))
       ? Number(source.CHATBOT_TEMPERATURE)
       : 0.4,
