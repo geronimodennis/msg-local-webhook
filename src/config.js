@@ -58,6 +58,7 @@ export function loadConfig(env = process.env) {
     chatbotContextMessages: Math.floor(positiveNumber(source.CHATBOT_CONTEXT_MESSAGES, 1)),
     chatbotCacheDirectory: source.CHATBOT_CACHE_DIRECTORY || ".cache",
     chatbotCacheMaxChars: positiveNumber(source.CHATBOT_CACHE_MAX_CHARS, 12_000),
+    chatbotRescanDumpDirectory: source.CHATBOT_RESCAN_DUMP_DIRECTORY || ".cache/rescans",
     chatbotSystemPrompt: source.CHATBOT_SYSTEM_PROMPT ||
       "Reply concisely and helpfully as a personal Messenger assistant. Do not claim to be human. Use natural conversational text. Emojis and normal Messenger formatting are allowed, but do not use Markdown syntax, Markdown headings, Markdown bullets, code blocks, or Markdown links.",
     messageSelector: source.MESSAGE_SELECTOR || "[data-message-id]",

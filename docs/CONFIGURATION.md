@@ -32,6 +32,7 @@ Copy `.env.example` to `.env` and edit the values below. The watcher reloads the
 | `CHATBOT_CONTEXT_MESSAGES` | Positive integer; defaults to `1` when unset | Number of newest previous conversation messages sent to the chatbot. |
 | `CHATBOT_CACHE_DIRECTORY` | Relative or absolute directory | Location of per-message chatbot cache files; default `.cache`. |
 | `CHATBOT_CACHE_MAX_CHARS` | Positive number | Cache size threshold that triggers summarization and replacement. |
+| `CHATBOT_RESCAN_DUMP_DIRECTORY` | Relative or absolute directory | Directory for readable text dumps of each conversation rescan. |
 | `CHATBOT_WEB_ACCESS` | `true` or `false` | Enables the chatbot's `web_search` and `fetch_url` tools; default `false`. |
 | `CHATBOT_WEB_MAX_CHARS` | Positive number | Maximum characters returned from each web tool; default `8000`. |
 | `CHATBOT_WEB_MAX_CALLS` | Positive number, capped at 5 | Maximum web-tool calls per reply; default `3`. |

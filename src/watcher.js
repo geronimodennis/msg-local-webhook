@@ -11,7 +11,7 @@ import {
 import { shouldReply, formatReply } from "./idle-policy.js";
 import { createStateStore } from "./state-store.js";
 import { generateReply, summarizeConversation } from "./chatbot.js";
-import { createConversationCache } from "./conversation-cache.js";
+import { createConversationCache, dumpRescan } from "./conversation-cache.js";
 
 export function createWatcher({
   page,
@@ -125,6 +125,13 @@ export function createWatcher({
               },
               rescanConversation: async (messageCount, offset) => {
                 const older = await readConversationMessages(page, messageCount, offset);
+                await dumpRescan(
+                  config.chatbotRescanDumpDirectory,
+                  candidate.id,
+                  candidate.threadName,
+                  offset,
+                  older
+                );
                 await conversationCache.update(candidate.id, {
                   threadName: candidate.threadName,
                   exchanges: older.map((content, index) => ({
