@@ -45,7 +45,7 @@ msg-local-webhook --for messenger --start
 The `.env` file is read from the directory where the command is run. Configure idle timing, direct contacts, reply text, and safety mode in `.env`. See [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) for all options.
 
 By default, replies use `REPLY_TEXT`. To generate replies with a chatbot, set `REPLY_MODE=chatbot` and configure an OpenAI-compatible `CHATBOT_API_URL`; `CHATBOT_API_KEY` is optional for local endpoints. Each chatbot request includes the current sender/thread and incoming message. If the chatbot request fails, `CHATBOT_FALLBACK_TEXT` is sent instead.
-Chatbot conversation context is cached per message ID under `.cache/`. The newest `CHATBOT_CONTEXT_MESSAGES` messages are appended to the cache. Caches exceeding `CHATBOT_CACHE_MAX_CHARS` are summarized for important facts, questions, commitments, dates, and chronology before replacement.
+Chatbot conversation context is cached per message ID under `.cache/` as compressed gzip files. The newest `CHATBOT_CONTEXT_MESSAGES` messages are appended to the cache. Caches exceeding `CHATBOT_CACHE_MAX_CHARS` are summarized for important facts, questions, commitments, dates, and chronology before replacement.
 
 For Ollama models that support tool calling, set `CHATBOT_WEB_ACCESS=true`. The assistant can then search DuckDuckGo and fetch public web pages. Tool access is off by default; calls are limited and private/local network URLs are blocked.
 

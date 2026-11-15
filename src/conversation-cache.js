@@ -1,6 +1,11 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { gzip, gunzip } from "node:zlib";
+import { promisify } from "node:util";
+
+const gzipAsync = promisify(gzip);
+const gunzipAsync = promisify(gunzip);
 
 export function createConversationCache({
   directory = ".cache",
@@ -10,14 +15,23 @@ export function createConversationCache({
   async function fileFor(messageId) {
     await mkdir(directory, { recursive: true });
     const key = createHash("sha256").update(String(messageId)).digest("hex");
-    return join(directory, `${key}.json`);
+    return join(directory, `${key}.json.gz`);
   }
 
   async function read(messageId) {
     try {
-      return JSON.parse(await readFile(await fileFor(messageId), "utf8"));
+      const compressed = await readFile(await fileFor(messageId));
+      return JSON.parse((await gunzipAsync(compressed)).toString("utf8"));
     } catch (error) {
-      if (error.code === "ENOENT") return { messageId, exchanges: [] };
+      if (error.code === "ENOENT") {
+        const key = createHash("sha256").update(String(messageId)).digest("hex");
+        try {
+          return JSON.parse(await readFile(join(directory, `${key}.json`), "utf8"));
+        } catch (legacyError) {
+          if (legacyError.code === "ENOENT") return { messageId, exchanges: [] };
+          throw legacyError;
+        }
+      }
       throw error;
     }
   }
@@ -52,7 +66,8 @@ export function createConversationCache({
 
     cache.updatedAt = new Date().toISOString();
     cache.context = context;
-    await writeFile(await fileFor(messageId), `${JSON.stringify(cache, null, 2)}\n`, "utf8");
+    const data = Buffer.from(`${JSON.stringify(cache)}\n`, "utf8");
+    await writeFile(await fileFor(messageId), await gzipAsync(data));
     return cache;
   }
 
