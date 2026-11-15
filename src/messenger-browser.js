@@ -169,8 +169,12 @@ export async function readConversationMessages(page, messageCount = 10, offset =
   if (offset > 0) await scrollConversationOlder(page);
   const messages = await page.locator('[role="main"]').evaluate((main) => {
     const seen = new Set();
-    return [...main.querySelectorAll("*")]
-      .map((node) => (node.innerText || "").trim())
+    const labelled = [...main.querySelectorAll('[aria-label*="Message sent" i], [aria-label*="Message received" i]')]
+      .map((node) => (node.getAttribute("aria-label") || "").trim());
+    const visible = labelled.length
+      ? labelled
+      : [...main.querySelectorAll("*")].map((node) => (node.innerText || "").trim());
+    return visible
       .filter((text) => /message (sent|received)/iu.test(text) && text.length < 2_000)
       .filter((text) => {
         if (seen.has(text)) return false;
@@ -180,9 +184,8 @@ export async function readConversationMessages(page, messageCount = 10, offset =
   }).catch(() => []);
 
   if (messages.length) {
-    const end = offset > 0 ? -offset : undefined;
-    const start = offset > 0 ? -(offset + messageCount) : -messageCount;
-    return messages.slice(start, end);
+    if (offset > 0) return messages.slice(0, messageCount);
+    return messages.slice(-messageCount);
   }
   const fallback = (await page.locator('[role="main"]').innerText().catch(() => "")).trim();
   return fallback ? [fallback] : [];
@@ -191,8 +194,15 @@ export async function readConversationMessages(page, messageCount = 10, offset =
 async function scrollConversationOlder(page) {
   const before = await page.evaluate(() => {
     const main = document.querySelector('[role="main"]');
-    const scrollables = [main, ...main?.querySelectorAll("*") || []]
-      .filter((element) => element && element.scrollHeight > element.clientHeight + 20)
+    const message = main?.querySelector('[aria-label*="Message sent" i], [aria-label*="Message received" i]');
+    const ancestors = [];
+    for (let element = message; element; element = element.parentElement) ancestors.push(element);
+    const scrollables = [...ancestors, main, ...main?.querySelectorAll("*") || []]
+      .filter((element) => {
+        if (!element || element.scrollHeight <= element.clientHeight + 20) return false;
+        const rect = element.getBoundingClientRect();
+        return element.clientHeight > 100 && rect.width > 300;
+      })
       .sort((a, b) =>
         (b.scrollHeight - b.clientHeight) - (a.scrollHeight - a.clientHeight)
       );
