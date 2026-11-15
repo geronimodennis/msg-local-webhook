@@ -6,11 +6,6 @@ function positiveNumber(value, fallback) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-function nonNegativeNumber(value, fallback) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
-}
-
 function idleMilliseconds(env) {
   if (env.IDLE_VALUE) {
     const unit = (env.IDLE_UNIT || "minutes").toLowerCase();
@@ -53,7 +48,6 @@ export function loadConfig(env = process.env) {
     chatbotModel: source.CHATBOT_MODEL || "default",
     chatbotVerboseLogging: source.CHATBOT_VERBOSE_LOGGING !== "false",
     chatbotRescanBeforeReply: source.CHATBOT_RESCAN_BEFORE_REPLY === "true",
-    sendReceiptTimeoutMs: nonNegativeNumber(source.SEND_RECEIPT_TIMEOUT_MS, 0),
     chatbotTemperature: Number.isFinite(Number(source.CHATBOT_TEMPERATURE))
       ? Number(source.CHATBOT_TEMPERATURE)
       : 0.4,

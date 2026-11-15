@@ -16,7 +16,6 @@ Copy `.env.example` to `.env` and edit the values below. The watcher reloads the
 | `IDLE_VALUE` | Positive number | Idle threshold amount. |
 | `IDLE_UNIT` | `seconds` or `minutes` | Unit for `IDLE_VALUE`. |
 | `POLL_SECONDS` | Positive number | How often the inbox is checked. |
-| `SEND_RECEIPT_TIMEOUT_MS` | Non-negative milliseconds; `0` waits indefinitely | How long to wait for Messenger's confirmed `Message sent` receipt. |
 | `DIRECT_CONTACTS` | Comma-separated exact Messenger names, or empty | Direct contacts eligible for replies. |
 | `MENTION_PATTERN` | JavaScript regular expression, or empty | Optional override for matching mentions in group messages. |
 | `REPLY_PREFIX` | Any text | Prefix added to every reply. |

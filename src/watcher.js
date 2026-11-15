@@ -170,7 +170,7 @@ export function createWatcher({
       if (config.dryRun) {
         logger.log(`[watcher] DRY RUN candidate ${candidate.id}: ${text}`);
       } else {
-        await sendReply(page, text, config.composerSelector, config.sendReceiptTimeoutMs);
+        await sendReply(page, text, config.composerSelector);
         stateStore.markReplied(candidate.id, currentTime);
         if (cache) {
           try {

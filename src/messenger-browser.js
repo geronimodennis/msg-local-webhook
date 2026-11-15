@@ -129,7 +129,7 @@ export async function returnToInbox(page, messengerUrl) {
   }
 }
 
-export async function sendReply(page, text, selector, receiptTimeoutMs = 60_000) {
+export async function sendReply(page, text, selector) {
   const composer = page.locator(selector).last();
   await composer.waitFor({ state: "visible", timeout: 5_000 });
   const existingSentReplies = await countSentReplies(page, text);
@@ -146,10 +146,10 @@ export async function sendReply(page, text, selector, receiptTimeoutMs = 60_000)
         return sentCount > existingCount;
       },
       { replyText: text, existingCount: existingSentReplies },
-      { timeout: receiptTimeoutMs }
+      { timeout: 0 }
     );
   } catch (error) {
-    error.code = "SEND_RECEIPT_TIMEOUT";
+    error.code = "SEND_RECEIPT_ERROR";
     throw error;
   }
   await page.waitForTimeout(500);
