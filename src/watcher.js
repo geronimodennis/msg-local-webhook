@@ -84,7 +84,8 @@ export function createWatcher({
         const previousMessages = await readConversationMessages(page, config.chatbotContextMessages);
         const scannedMessages = new Set(previousMessages);
         try {
-          cache = await conversationCache.update(candidate.id, {
+          const cacheKey = candidate.conversationId || candidate.id;
+          cache = await conversationCache.update(cacheKey, {
             threadName: candidate.threadName,
             exchanges: [
               ...previousMessages.map((content, index) => ({
@@ -141,7 +142,7 @@ export function createWatcher({
                   scanOffset - messageCount,
                   older
                 );
-                await conversationCache.update(candidate.id, {
+          await conversationCache.update(candidate.conversationId || candidate.id, {
                   threadName: candidate.threadName,
                   exchanges: older.map((content, index) => ({
                     key: `rescan:${scanOffset - messageCount}:${index}:${content}`,

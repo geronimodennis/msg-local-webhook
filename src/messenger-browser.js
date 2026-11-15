@@ -52,12 +52,14 @@ export async function inspectMessenger(page) {
 
 export async function readMessageCandidates(page, selector) {
   return page.evaluate((messageSelector) => {
+    const conversationId = location.pathname.match(/\/messages\/t\/([^/]+)/)?.[1] || "";
     return [...document.querySelectorAll(messageSelector)].map((element, index) => {
       const container = element.closest('[role="main"]') || element;
       const label = element.getAttribute("aria-label") || "";
       const time = element.querySelector("time")?.dateTime || element.querySelector("time")?.textContent || "";
       return {
         id: element.getAttribute("data-message-id") || `${index}:${element.textContent}`,
+        conversationId,
         text: (element.innerText || element.textContent || "").trim(),
         label,
         time,
@@ -100,6 +102,7 @@ export async function readInboxCandidates(page) {
       if (!threadName || !preview) continue;
       candidates.push({
         id: `${threadName}|${preview}`,
+        conversationId: card.closest("a")?.href.match(/\/messages\/t\/([^/?]+)/)?.[1] || "",
         threadName,
         text: preview,
         age,
