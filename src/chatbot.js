@@ -90,7 +90,8 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
         name: "inspect_current_conversation",
         url: describeImageUrl(message.visionImage),
         path: captured.path,
-        source: captured.source
+        source: captured.source,
+        sourceUrl: captured.sourceUrl
       });
     } catch (error) {
       tools.onEvent?.({
@@ -244,7 +245,8 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
           name,
           url: describeImageUrl(result.imageUrl),
           path: result.dumpPath,
-          source: result.source
+          source: result.source,
+          sourceUrl: result.sourceUrl
         });
         messages.push({
           role: "user",

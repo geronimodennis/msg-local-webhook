@@ -155,6 +155,7 @@ export function createWatcher({
                   chatbotLog(
                     `tool image ${event.name}: ${event.url}` +
                     (event.source ? `; source=${event.source}` : "") +
+                    (event.sourceUrl ? `; source_url=${event.sourceUrl}` : "") +
                     (event.path ? `; dumped to ${event.path}` : "")
                   );
                 }
@@ -312,17 +313,42 @@ async function captureConversationImage(page, dumpDirectory = "") {
   const target = imageIndex >= 0
     ? imageLocator.nth(imageIndex)
     : page.locator('[role="main"]').first();
-  const image = await target.screenshot({ type: "png" });
+  let image;
+  let imageMime = "image/png";
+  let sourceUrl = "";
+  let source = "conversation view";
+  if (imageIndex >= 0) {
+    sourceUrl = await target.evaluate((element) => element.currentSrc || element.src || "");
+    try {
+      const response = await page.context().request.get(sourceUrl);
+      if (response.ok()) {
+        image = await response.body();
+        imageMime = response.headers()["content-type"]?.split(";")[0] || imageMime;
+        source = "Messenger original image";
+      }
+    } catch {
+      // Some Messenger URLs are blob URLs or require page-only credentials.
+    }
+  }
+  if (!image) image = await target.screenshot({ type: "png" });
   let path;
   if (dumpDirectory) {
     await mkdir(dumpDirectory, { recursive: true });
-    path = join(dumpDirectory, `vision-${Date.now()}.png`);
+    const extension = imageMime === "image/jpeg"
+      ? "jpg"
+      : imageMime === "image/webp"
+        ? "webp"
+        : imageMime === "image/gif"
+          ? "gif"
+          : "png";
+    path = join(dumpDirectory, `vision-${Date.now()}.${extension}`);
     await writeFile(path, image);
   }
   return {
-    imageUrl: `data:image/png;base64,${image.toString("base64")}`,
+    imageUrl: `data:${imageMime};base64,${image.toString("base64")}`,
     path,
-    source: imageIndex >= 0 ? "Messenger image attachment" : "conversation view"
+    source,
+    sourceUrl
   };
 }
 
