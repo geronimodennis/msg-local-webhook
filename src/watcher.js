@@ -295,6 +295,7 @@ function exchangeKey(role, content, suffix = "") {
 }
 
 async function captureConversationImage(page, dumpDirectory = "") {
+  await scrollConversationRecent(page);
   const imageLocator = page.locator('[role="main"] img');
   const imageIndex = await imageLocator.evaluateAll((images) => {
     const candidates = images.map((image, index) => {
@@ -305,9 +306,9 @@ async function captureConversationImage(page, dumpDirectory = "") {
         rect.right > 0 &&
         rect.top < window.innerHeight &&
         rect.left < window.innerWidth;
-      return { index, area: rect.width * rect.height, visible };
+      return { index, area: rect.width * rect.height, bottom: rect.bottom, visible };
     }).filter((candidate) => candidate.visible);
-    candidates.sort((a, b) => b.area - a.area);
+    candidates.sort((a, b) => b.bottom - a.bottom || b.area - a.area);
     return candidates[0]?.index ?? -1;
   }).catch(() => -1);
   const target = imageIndex >= 0
@@ -350,6 +351,31 @@ async function captureConversationImage(page, dumpDirectory = "") {
     source,
     sourceUrl
   };
+}
+
+async function scrollConversationRecent(page) {
+  const moved = await page.evaluate(() => {
+    const main = document.querySelector('[role="main"]');
+    const message = main?.querySelector('[aria-label*="Message sent" i], [aria-label*="Message received" i]');
+    const ancestors = [];
+    for (let element = message; element; element = element.parentElement) ancestors.push(element);
+    const scrollables = [...ancestors, main, ...main?.querySelectorAll("*") || []]
+      .filter((element) => {
+        if (!element || element.scrollHeight <= element.clientHeight + 20) return false;
+        const rect = element.getBoundingClientRect();
+        return element.clientHeight > 100 && rect.width > 300;
+      })
+      .sort((a, b) =>
+        (b.scrollHeight - b.clientHeight) - (a.scrollHeight - a.clientHeight)
+      );
+    const scrollable = scrollables[0];
+    if (!scrollable) return false;
+    const oldTop = scrollable.scrollTop;
+    scrollable.scrollTop = scrollable.scrollHeight;
+    scrollable.dispatchEvent(new Event("scroll", { bubbles: true }));
+    return oldTop !== scrollable.scrollTop;
+  }).catch(() => false);
+  if (moved) await page.waitForTimeout(750);
 }
 
 function escapeRegExp(value) {
