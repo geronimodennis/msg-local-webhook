@@ -98,6 +98,7 @@ export function createWatcher({
             config,
             fetch,
             {
+              rescanRequested: false,
               onEvent: (event) => {
                 if (event.type === "tool") chatbotLog(`is using tool: ${event.name}`);
               },
@@ -118,7 +119,7 @@ export function createWatcher({
       if (config.dryRun) {
         logger.log(`[watcher] DRY RUN candidate ${candidate.id}: ${text}`);
       } else {
-        await sendReply(page, text, config.composerSelector);
+        await sendReply(page, text, config.composerSelector, config.sendReceiptTimeoutMs);
         stateStore.markReplied(candidate.id, currentTime);
         if (cache) {
           try {

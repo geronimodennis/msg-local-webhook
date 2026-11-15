@@ -47,6 +47,8 @@ export function loadConfig(env = process.env) {
     chatbotApiKey: source.CHATBOT_API_KEY || "",
     chatbotModel: source.CHATBOT_MODEL || "default",
     chatbotVerboseLogging: source.CHATBOT_VERBOSE_LOGGING !== "false",
+    chatbotRescanBeforeReply: source.CHATBOT_RESCAN_BEFORE_REPLY === "true",
+    sendReceiptTimeoutMs: positiveNumber(source.SEND_RECEIPT_TIMEOUT_MS, 60_000),
     chatbotTemperature: Number.isFinite(Number(source.CHATBOT_TEMPERATURE))
       ? Number(source.CHATBOT_TEMPERATURE)
       : 0.4,

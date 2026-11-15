@@ -16,6 +16,7 @@ Copy `.env.example` to `.env` and edit the values below. The watcher reloads the
 | `IDLE_VALUE` | Positive number | Idle threshold amount. |
 | `IDLE_UNIT` | `seconds` or `minutes` | Unit for `IDLE_VALUE`. |
 | `POLL_SECONDS` | Positive number | How often the inbox is checked. |
+| `SEND_RECEIPT_TIMEOUT_MS` | Positive milliseconds; default `60000` | How long to wait for Messenger's confirmed `Message sent` receipt. |
 | `DIRECT_CONTACTS` | Comma-separated exact Messenger names, or empty | Direct contacts eligible for replies. |
 | `MENTION_PATTERN` | JavaScript regular expression, or empty | Optional override for matching mentions in group messages. |
 | `REPLY_PREFIX` | Any text | Prefix added to every reply. |
@@ -26,6 +27,7 @@ Copy `.env.example` to `.env` and edit the values below. The watcher reloads the
 | `CHATBOT_API_KEY` | Token or empty | Optional bearer token for the chatbot endpoint. |
 | `CHATBOT_MODEL` | Model name | Model sent to the chatbot endpoint. |
 | `CHATBOT_VERBOSE_LOGGING` | `true` or `false` | Logs chatbot composition, tool use, success, and fallback errors; default `true`. |
+| `CHATBOT_RESCAN_BEFORE_REPLY` | `true` or `false` | Forces one fresh conversation rescan before generation; default `false`. |
 | `CHATBOT_TEMPERATURE` | Number, normally `0` to `2` | Generation randomness. |
 | `CHATBOT_CONTEXT_MESSAGES` | Positive integer; defaults to `1` when unset | Number of newest previous conversation messages sent to the chatbot. |
 | `CHATBOT_CACHE_DIRECTORY` | Relative or absolute directory | Location of per-message chatbot cache files; default `.cache`. |

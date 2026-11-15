@@ -74,7 +74,7 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
   let calls = 0;
 
   while (true) {
-    const response = await fetchImpl(config.chatbotApiUrl, {
+      const response = await fetchImpl(config.chatbotApiUrl, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -84,7 +84,12 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
         model: config.chatbotModel,
         messages,
         temperature: config.chatbotTemperature,
-        tools: enabledTools
+        tools: enabledTools,
+        ...(enabledTools.length ? {
+          tool_choice: config.chatbotRescanBeforeReply && !tools.rescanRequested
+            ? { type: "function", function: { name: "rescan_conversation" } }
+            : "auto"
+        } : {})
       })
     });
 
@@ -110,6 +115,7 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
     for (const toolCall of toolCalls) {
       const name = toolCall.function?.name;
       tools.onEvent?.({ type: "tool", name });
+      if (name === "rescan_conversation") tools.rescanRequested = true;
       let args;
       try {
         args = JSON.parse(toolCall.function?.arguments || "{}");
