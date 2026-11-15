@@ -29,15 +29,17 @@ Keep `DRY_RUN=true` for the first test. Set `DRY_RUN=false` only after confirmin
 
 ## Install from npm
 
-After publishing the package:
+After publishing the package, install the command globally:
 
 ```powershell
-mkdir messenger-idle-assistant
-cd messenger-idle-assistant
-npm.cmd init -y
-npm.cmd install local-messenger-idle-assistant
-Copy-Item node_modules\local-messenger-idle-assistant\.env.example .env
-node node_modules\local-messenger-idle-assistant\src\index.js
+npm.cmd install --global local-messenger-idle-assistant
+messenger-idle-assistant init
+```
+
+Edit the generated `.env`, then start the watcher from the same directory:
+
+```powershell
+messenger-idle-assistant
 ```
 
 The `.env` file is read from the directory where the command is run. Configure idle timing, direct contacts, reply text, and safety mode in `.env`. See [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) for all options.
