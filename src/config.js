@@ -32,6 +32,15 @@ export function loadConfig(env = process.env) {
     directContacts: (source.DIRECT_CONTACTS || "").split(",").map((name) => name.trim()).filter(Boolean),
     replyPrefix: source.REPLY_PREFIX || "[DG's AI assistant]:",
     replyText: source.REPLY_TEXT || "I’m away right now and will get back to you when I can.",
+    replyMode: source.REPLY_MODE === "chatbot" ? "chatbot" : "static",
+    chatbotApiUrl: source.CHATBOT_API_URL || "",
+    chatbotApiKey: source.CHATBOT_API_KEY || "",
+    chatbotModel: source.CHATBOT_MODEL || "default",
+    chatbotTemperature: Number.isFinite(Number(source.CHATBOT_TEMPERATURE))
+      ? Number(source.CHATBOT_TEMPERATURE)
+      : 0.4,
+    chatbotSystemPrompt: source.CHATBOT_SYSTEM_PROMPT ||
+      "Reply concisely and helpfully as a personal Messenger assistant. Do not claim to be human.",
     messageSelector: source.MESSAGE_SELECTOR || "[data-message-id]",
     composerSelector: source.COMPOSER_SELECTOR || 'textarea, [contenteditable="true"]'
   };

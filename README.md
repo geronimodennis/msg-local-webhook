@@ -44,6 +44,8 @@ msg-local-webhook --for messenger --start
 
 The `.env` file is read from the directory where the command is run. Configure idle timing, direct contacts, reply text, and safety mode in `.env`. See [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) for all options.
 
+By default, replies use `REPLY_TEXT`. To generate replies with a chatbot, set `REPLY_MODE=chatbot` and configure an OpenAI-compatible `CHATBOT_API_URL`; `CHATBOT_API_KEY` is optional for local endpoints. If the chatbot request fails, no message is sent.
+
 ## Setup
 
 1. Install dependencies with `npm.cmd install`.

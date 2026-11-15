@@ -8,6 +8,7 @@ import {
 } from "./messenger-browser.js";
 import { shouldReply, formatReply } from "./idle-policy.js";
 import { createStateStore } from "./state-store.js";
+import { generateReply } from "./chatbot.js";
 
 export function createWatcher({
   page,
@@ -57,7 +58,16 @@ export function createWatcher({
       })) continue;
 
       if (inboxCandidates.length) await openInboxCandidate(page, candidate.threadName);
-      const text = formatReply(message, config.replyPrefix, config.replyText);
+      let replyBody = config.replyText;
+      if (config.replyMode === "chatbot") {
+        try {
+          replyBody = await generateReply(message, config);
+        } catch (error) {
+          logger.error(`[watcher] chatbot reply skipped: ${error.message}`);
+          continue;
+        }
+      }
+      const text = formatReply(message, config.replyPrefix, replyBody);
       if (config.dryRun) {
         logger.log(`[watcher] DRY RUN candidate ${candidate.id}: ${text}`);
       } else {

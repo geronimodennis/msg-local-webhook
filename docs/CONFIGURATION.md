@@ -20,6 +20,12 @@ Copy `.env.example` to `.env` and edit the values below. The watcher reloads the
 | `MENTION_PATTERN` | JavaScript regular expression, or empty | Optional override for matching mentions in group messages. |
 | `REPLY_PREFIX` | Any text | Prefix added to every reply. |
 | `REPLY_TEXT` | Any non-empty text | Reply body. |
+| `REPLY_MODE` | `static` or `chatbot` | Uses `REPLY_TEXT` or generates a reply through the chatbot endpoint. |
+| `CHATBOT_API_URL` | OpenAI-compatible chat-completions URL | Required when `REPLY_MODE=chatbot`. |
+| `CHATBOT_API_KEY` | Token or empty | Optional bearer token for the chatbot endpoint. |
+| `CHATBOT_MODEL` | Model name | Model sent to the chatbot endpoint. |
+| `CHATBOT_TEMPERATURE` | Number, normally `0` to `2` | Generation randomness. |
+| `CHATBOT_SYSTEM_PROMPT` | Any text | System instruction for generated replies. |
 | `MESSAGE_SELECTOR` | CSS selector | Selector for rendered message elements; Facebook may change this. |
 | `COMPOSER_SELECTOR` | CSS selector for a textarea/contenteditable | Selector used to type replies. |
 
