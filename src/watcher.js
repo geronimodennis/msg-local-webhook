@@ -4,7 +4,8 @@ import {
   readInboxCandidates,
   readMessageCandidates,
   returnToInbox,
-  sendReply
+  sendReply,
+  showTyping
 } from "./messenger-browser.js";
 import { shouldReply, formatReply } from "./idle-policy.js";
 import { createStateStore } from "./state-store.js";
@@ -60,6 +61,7 @@ export function createWatcher({
       if (inboxCandidates.length) await openInboxCandidate(page, candidate.threadName);
       let replyBody = config.replyText;
       if (config.replyMode === "chatbot") {
+        if (!config.dryRun) await showTyping(page, config.composerSelector);
         try {
           replyBody = await generateReply(message, config);
         } catch (error) {

@@ -154,6 +154,12 @@ export async function sendReply(page, text, selector) {
   await page.waitForTimeout(500);
 }
 
+export async function showTyping(page, selector) {
+  const composer = page.locator(selector).last();
+  await composer.waitFor({ state: "visible", timeout: 5_000 });
+  await composer.fill("…");
+}
+
 async function countSentReplies(page, text) {
   return page.evaluate((replyText) => [...document.querySelectorAll("*")]
     .filter((node) => {
