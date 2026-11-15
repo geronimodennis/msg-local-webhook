@@ -50,6 +50,16 @@ Group messages are eligible only when the mention matches the detected account n
 
 Each incoming message gets a compressed gzip cache file in `.cache/`. The cache stores the newest conversation exchanges and the assistant's confirmed replies. `CHATBOT_CONTEXT_MESSAGES` controls how many recent Messenger messages are added on each response. When the cache exceeds `CHATBOT_CACHE_MAX_CHARS`, the chatbot summarizes the conversation while preserving important facts, questions, commitments, dates, and chronological meaning, then replaces the oversized cache with that summary. Older uncompressed `.json` cache files remain readable.
 
+## Deep conversation scanning
+
+The initial scan uses the newest `CHATBOT_CONTEXT_MESSAGES` messages. When `CHATBOT_RESCAN_BEFORE_REPLY=true`, the first chatbot request is forced to call `rescan_conversation` with the next older offset. The chatbot can then request additional pages:
+
+- offset `20`: messages 21–40
+- offset `40`: messages 41–60
+- offset `60`: messages 61–80
+
+Each retrieved older page is added to the per-message cache. The model decides when the existing context is sufficient; it should stop scanning once it has enough relevant context.
+
 The `.cache/` directory is local runtime data and is excluded from Git.
 
 ## Example

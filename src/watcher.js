@@ -109,8 +109,20 @@ export function createWatcher({
               onEvent: (event) => {
                 if (event.type === "tool") chatbotLog(`is using tool: ${event.name}`);
               },
-              rescanConversation: async (messageCount) =>
-                (await readConversationMessages(page, messageCount)).join("\n")
+              rescanConversation: async (messageCount, offset) => {
+                const older = await readConversationMessages(page, messageCount, offset);
+                await conversationCache.update(candidate.id, {
+                  threadName: candidate.threadName,
+                  exchanges: older.map((content, index) => ({
+                    key: `rescan:${offset}:${index}:${content}`,
+                    role: "conversation",
+                    content
+                  }))
+                });
+                return older.length
+                  ? `Older conversation messages ${offset + 1}-${offset + older.length}:\n${older.join("\n")}`
+                  : "No older conversation messages were found.";
+              }
             }
           );
           chatbotLog("composed a response");

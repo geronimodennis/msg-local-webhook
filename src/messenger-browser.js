@@ -129,7 +129,7 @@ export async function returnToInbox(page, messengerUrl) {
   }
 }
 
-export async function sendReply(page, text, selector) {
+export async function sendReply(page, text, selector, receiptTimeoutMs = 60_000) {
   const composer = page.locator(selector).last();
   await composer.waitFor({ state: "visible", timeout: 5_000 });
   const existingSentReplies = await countSentReplies(page, text);
@@ -149,7 +149,7 @@ export async function sendReply(page, text, selector) {
       return sentCount > existingCount;
     },
     { replyText: text, existingCount: existingSentReplies },
-    { timeout: 15_000 }
+    { timeout: receiptTimeoutMs }
   );
   await page.waitForTimeout(500);
 }
@@ -165,7 +165,8 @@ export async function readConversationContext(page, messageCount = 10) {
     .join("\n");
 }
 
-export async function readConversationMessages(page, messageCount = 10) {
+export async function readConversationMessages(page, messageCount = 10, offset = 0) {
+  if (offset > 0) await scrollConversationOlder(page);
   const messages = await page.locator('[role="main"]').evaluate((main) => {
     const seen = new Set();
     return [...main.querySelectorAll("*")]
@@ -178,9 +179,23 @@ export async function readConversationMessages(page, messageCount = 10) {
       });
   }).catch(() => []);
 
-  if (messages.length) return messages.slice(-messageCount);
+  if (messages.length) {
+    const end = offset > 0 ? -offset : undefined;
+    const start = offset > 0 ? -(offset + messageCount) : -messageCount;
+    return messages.slice(start, end);
+  }
   const fallback = (await page.locator('[role="main"]').innerText().catch(() => "")).trim();
   return fallback ? [fallback] : [];
+}
+
+async function scrollConversationOlder(page) {
+  await page.evaluate(() => {
+    const main = document.querySelector('[role="main"]');
+    const scrollable = [main, ...main?.querySelectorAll("*") || []]
+      .find((element) => element && element.scrollHeight > element.clientHeight + 20);
+    if (scrollable) scrollable.scrollTop = 0;
+  });
+  await page.waitForTimeout(750);
 }
 
 async function countSentReplies(page, text) {

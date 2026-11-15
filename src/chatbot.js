@@ -31,13 +31,17 @@ const webTools = [
     type: "function",
     function: {
       name: "rescan_conversation",
-      description: "Rescan the currently open Messenger conversation for newer or missing messages.",
+      description: "Rescan older pages of the currently open Messenger conversation when context is incomplete. Start with offset 20, then 40, then 60.",
       parameters: {
         type: "object",
         properties: {
           message_count: {
             type: "integer",
             description: "Number of newest conversation messages to return."
+          },
+          offset: {
+            type: "integer",
+            description: "Number of newer messages to skip. Use 20, then 40, then 60."
           }
         },
         required: []
@@ -54,7 +58,7 @@ export async function generateReply(message, config, fetchImpl = fetch, tools = 
   const sender = message.threadName || "Messenger contact";
   const currentMessage = [
     `You are responding to the current message from ${sender}.`,
-    "Use the previous conversation messages only as context. Reply only to the current message and do not invent missing context.",
+    "Use the previous conversation messages only as context. If context is incomplete, call rescan_conversation with offset 20, then 40, then 60 as needed before replying. Reply only to the current message and do not invent missing context.",
     "",
     "Previous conversation context:",
     message.conversationContext || "(No previous conversation context is available.)",
@@ -167,7 +171,10 @@ async function executeWebTool(name, args, config, tools) {
   if (name === "fetch_url") return fetchUrl(args.url, config.chatbotWebMaxChars);
   if (name === "rescan_conversation") {
     if (!tools.rescanConversation) return "Conversation rescan is unavailable.";
-    return tools.rescanConversation(args.message_count || config.chatbotContextMessages);
+    return tools.rescanConversation(
+      args.message_count || config.chatbotContextMessages,
+      args.offset ?? config.chatbotContextMessages
+    );
   }
   return `Unknown tool: ${name}`;
 }
