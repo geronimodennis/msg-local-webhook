@@ -49,8 +49,11 @@ export function loadConfig(env = process.env) {
     chatbotTemperature: Number.isFinite(Number(source.CHATBOT_TEMPERATURE))
       ? Number(source.CHATBOT_TEMPERATURE)
       : 0.4,
+    chatbotWebAccess: source.CHATBOT_WEB_ACCESS === "true",
+    chatbotWebMaxChars: positiveNumber(source.CHATBOT_WEB_MAX_CHARS, 8_000),
+    chatbotWebMaxCalls: Math.min(5, positiveNumber(source.CHATBOT_WEB_MAX_CALLS, 3)),
     chatbotSystemPrompt: source.CHATBOT_SYSTEM_PROMPT ||
-      "Reply concisely and helpfully as a personal Messenger assistant. Do not claim to be human.",
+      "Reply concisely and helpfully as a personal Messenger assistant. Do not claim to be human. Use natural conversational text. Emojis and normal Messenger formatting are allowed, but do not use Markdown syntax, Markdown headings, Markdown bullets, code blocks, or Markdown links.",
     messageSelector: source.MESSAGE_SELECTOR || "[data-message-id]",
     composerSelector: source.COMPOSER_SELECTOR || 'textarea, [contenteditable="true"]'
   };
