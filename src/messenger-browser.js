@@ -160,9 +160,21 @@ export async function showTyping(page, selector) {
   await composer.fill("…");
 }
 
-export async function readConversationContext(page, maxChars = 6_000) {
-  const text = await page.locator('[role="main"]').innerText().catch(() => "");
-  return text.trim().slice(-maxChars);
+export async function readConversationContext(page, messageCount = 10) {
+  const messages = await page.locator('[role="main"]').evaluate((main) => {
+    const seen = new Set();
+    return [...main.querySelectorAll("*")]
+      .map((node) => (node.innerText || "").trim())
+      .filter((text) => /message (sent|received)/iu.test(text) && text.length < 2_000)
+      .filter((text) => {
+        if (seen.has(text)) return false;
+        seen.add(text);
+        return true;
+      });
+  }).catch(() => []);
+
+  if (messages.length) return messages.slice(-messageCount).join("\n");
+  return (await page.locator('[role="main"]').innerText().catch(() => "")).trim();
 }
 
 async function countSentReplies(page, text) {

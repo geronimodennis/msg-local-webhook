@@ -37,7 +37,7 @@ export async function generateReply(message, config, fetchImpl = fetch) {
   const sender = message.threadName || "Messenger contact";
   const currentMessage = [
     `You are responding to the current message from ${sender}.`,
-    "Use the previous conversation only as context. Reply only to the current message and do not invent missing context.",
+    "Use the previous conversation messages only as context. Reply only to the current message and do not invent missing context.",
     "",
     "Previous conversation context:",
     message.conversationContext || "(No previous conversation context is available.)",

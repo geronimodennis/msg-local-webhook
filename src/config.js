@@ -52,7 +52,7 @@ export function loadConfig(env = process.env) {
     chatbotWebAccess: source.CHATBOT_WEB_ACCESS === "true",
     chatbotWebMaxChars: positiveNumber(source.CHATBOT_WEB_MAX_CHARS, 8_000),
     chatbotWebMaxCalls: Math.min(5, positiveNumber(source.CHATBOT_WEB_MAX_CALLS, 3)),
-    chatbotContextMaxChars: positiveNumber(source.CHATBOT_CONTEXT_MAX_CHARS, 6_000),
+    chatbotContextMessages: Math.floor(positiveNumber(source.CHATBOT_CONTEXT_MESSAGES, 10)),
     chatbotSystemPrompt: source.CHATBOT_SYSTEM_PROMPT ||
       "Reply concisely and helpfully as a personal Messenger assistant. Do not claim to be human. Use natural conversational text. Emojis and normal Messenger formatting are allowed, but do not use Markdown syntax, Markdown headings, Markdown bullets, code blocks, or Markdown links.",
     messageSelector: source.MESSAGE_SELECTOR || "[data-message-id]",

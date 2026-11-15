@@ -64,7 +64,7 @@ export function createWatcher({
       if (config.replyMode === "chatbot") {
         const conversationContext = await readConversationContext(
           page,
-          config.chatbotContextMaxChars
+          config.chatbotContextMessages
         );
         if (!config.dryRun) await showTyping(page, config.composerSelector);
         try {
