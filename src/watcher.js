@@ -206,7 +206,7 @@ export function createWatcher({
       try {
         await tick();
       } catch (error) {
-        logger.error(`[watcher] ${error.message}`);
+        logger.error(`[watcher] ${error.code || "ERROR"}: ${error.message}`);
       }
       await new Promise((resolve) => setTimeout(resolve, config.pollMs));
     }

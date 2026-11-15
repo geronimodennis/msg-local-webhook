@@ -135,22 +135,23 @@ export async function sendReply(page, text, selector, receiptTimeoutMs = 60_000)
   const existingSentReplies = await countSentReplies(page, text);
   await composer.fill(text);
   await composer.press("Enter");
-  await page.waitForFunction(
-    ({ replyText, existingCount }) => {
-      const sentCount = [...document.querySelectorAll("*")]
-        .filter((node) => {
-          if (node.closest("textarea, [contenteditable='true']") ||
-              node.querySelector("textarea, [contenteditable='true']")) return false;
-          const content = (node.innerText || "").trim();
-          return content.includes(replyText) &&
-            /message sent/iu.test(content) &&
-            /\bby you\b/iu.test(content);
-        }).length;
-      return sentCount > existingCount;
-    },
-    { replyText: text, existingCount: existingSentReplies },
-    { timeout: receiptTimeoutMs }
-  );
+  try {
+    await page.waitForFunction(
+      ({ replyText, existingCount }) => {
+        const sentCount = [...document.querySelectorAll('[aria-label*="Message sent" i]')]
+          .filter((node) => {
+            const label = node.getAttribute("aria-label") || "";
+            return /\bby you\b/iu.test(label) && label.includes(replyText);
+          }).length;
+        return sentCount > existingCount;
+      },
+      { replyText: text, existingCount: existingSentReplies },
+      { timeout: receiptTimeoutMs }
+    );
+  } catch (error) {
+    error.code = "SEND_RECEIPT_TIMEOUT";
+    throw error;
+  }
   await page.waitForTimeout(500);
 }
 
@@ -218,13 +219,9 @@ async function scrollConversationOlder(page) {
 }
 
 async function countSentReplies(page, text) {
-  return page.evaluate((replyText) => [...document.querySelectorAll("*")]
+  return page.evaluate((replyText) => [...document.querySelectorAll('[aria-label*="Message sent" i]')]
     .filter((node) => {
-      if (node.closest("textarea, [contenteditable='true']") ||
-          node.querySelector("textarea, [contenteditable='true']")) return false;
-      const content = (node.innerText || "").trim();
-      return content.includes(replyText) &&
-        /message sent/iu.test(content) &&
-        /\bby you\b/iu.test(content);
+      const label = node.getAttribute("aria-label") || "";
+      return /\bby you\b/iu.test(label) && label.includes(replyText);
     }).length, text);
 }
