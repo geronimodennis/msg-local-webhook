@@ -42,6 +42,12 @@ The watcher automatically reads the logged-in Facebook account name from the bro
 
 Group messages are eligible only when the mention matches the detected account name or `MENTION_PATTERN`. A generic mention such as `@everyone` does not count as a mention of the logged-in account.
 
+## Conversation cache
+
+Each incoming message gets a cache file in `.cache/`. The cache stores the newest conversation exchanges and the assistant's confirmed replies. `CHATBOT_CONTEXT_MESSAGES` controls how many recent Messenger messages are added on each response. When the cache exceeds `CHATBOT_CACHE_MAX_CHARS`, the chatbot summarizes the conversation while preserving important facts, questions, commitments, dates, and chronological meaning, then replaces the oversized cache with that summary.
+
+The `.cache/` directory is local runtime data and is excluded from Git.
+
 ## Example
 
 ```env
