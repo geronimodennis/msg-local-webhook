@@ -16,6 +16,13 @@ function idleMilliseconds(env) {
   return positiveNumber(env.IDLE_MINUTES, 5) * 60_000;
 }
 
+function chatbotEndpoint(value) {
+  const url = (value || "").replace(/\/+$/, "");
+  if (url.endsWith("/chat/completions")) return url;
+  if (url.endsWith("/v1")) return `${url}/chat/completions`;
+  return url;
+}
+
 export function loadConfig(env = process.env) {
   const fileValues = env === process.env && existsSync(".env")
     ? parse(readFileSync(".env"))
@@ -36,7 +43,7 @@ export function loadConfig(env = process.env) {
     chatbotFallbackText: source.CHATBOT_FALLBACK_TEXT ||
       source.REPLY_TEXT ||
       "I’m away right now and will get back to you when I can.",
-    chatbotApiUrl: source.CHATBOT_API_URL || "",
+    chatbotApiUrl: chatbotEndpoint(source.CHATBOT_API_URL),
     chatbotApiKey: source.CHATBOT_API_KEY || "",
     chatbotModel: source.CHATBOT_MODEL || "default",
     chatbotTemperature: Number.isFinite(Number(source.CHATBOT_TEMPERATURE))

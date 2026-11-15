@@ -22,7 +22,7 @@ Copy `.env.example` to `.env` and edit the values below. The watcher reloads the
 | `REPLY_TEXT` | Any non-empty text | Reply body. |
 | `REPLY_MODE` | `static` or `chatbot` | Uses `REPLY_TEXT` or generates a reply through the chatbot endpoint. |
 | `CHATBOT_FALLBACK_TEXT` | Any non-empty text | Reply body used when chatbot generation fails. |
-| `CHATBOT_API_URL` | OpenAI-compatible chat-completions URL | Required when `REPLY_MODE=chatbot`. |
+| `CHATBOT_API_URL` | OpenAI-compatible URL, ending in `/v1` or `/v1/chat/completions` | Required when `REPLY_MODE=chatbot`; `/v1` is expanded automatically. |
 | `CHATBOT_API_KEY` | Token or empty | Optional bearer token for the chatbot endpoint. |
 | `CHATBOT_MODEL` | Model name | Model sent to the chatbot endpoint. |
 | `CHATBOT_TEMPERATURE` | Number, normally `0` to `2` | Generation randomness. |
