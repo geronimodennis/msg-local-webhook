@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { parse } from "dotenv";
 
 function positiveNumber(value, fallback) {
@@ -23,11 +24,33 @@ function chatbotEndpoint(value) {
   return url;
 }
 
+export function loadModelMetadata(model, directory = ".ai-metadata") {
+  const safeName = String(model || "default").replace(/[<>:"/\\|?*]/g, "_");
+  const candidates = [
+    join(directory, `${model}.info`),
+    join(directory, `${safeName}.info`)
+  ];
+  const file = candidates.find((candidate) => existsSync(candidate));
+  if (!file) return { model, capabilities: {}, tools: {} };
+  try {
+    const metadata = JSON.parse(readFileSync(file, "utf8"));
+    return {
+      model: metadata.model || model,
+      capabilities: metadata.capabilities || {},
+      tools: metadata.tools || {}
+    };
+  } catch (error) {
+    throw new Error(`Invalid chatbot metadata file ${file}: ${error.message}`);
+  }
+}
+
 export function loadConfig(env = process.env) {
   const fileValues = env === process.env && existsSync(".env")
     ? parse(readFileSync(".env"))
     : {};
   const source = { ...env, ...fileValues };
+  const chatbotModel = source.CHATBOT_MODEL || "default";
+  const chatbotMetadata = loadModelMetadata(chatbotModel);
   return {
     browserCdpUrl: source.BROWSER_CDP_URL || "http://127.0.0.1:9222",
     messengerUrl: source.MESSENGER_URL || "https://www.facebook.com/messages",
@@ -45,14 +68,17 @@ export function loadConfig(env = process.env) {
       "I’m away right now and will get back to you when I can.",
     chatbotApiUrl: chatbotEndpoint(source.CHATBOT_API_URL),
     chatbotApiKey: source.CHATBOT_API_KEY || "",
-    chatbotModel: source.CHATBOT_MODEL || "default",
+    chatbotModel,
+    chatbotMetadata,
     chatbotVerboseLogging: source.CHATBOT_VERBOSE_LOGGING !== "false",
     chatbotRescanBeforeReply: source.CHATBOT_RESCAN_BEFORE_REPLY === "true",
     chatbotTemperature: Number.isFinite(Number(source.CHATBOT_TEMPERATURE))
       ? Number(source.CHATBOT_TEMPERATURE)
       : 0.4,
-    chatbotWebAccess: source.CHATBOT_WEB_ACCESS === "true",
-    chatbotVision: source.CHATBOT_VISION === "true",
+    chatbotWebAccess: chatbotMetadata.tools.web_search === true &&
+      chatbotMetadata.tools.fetch_url === true,
+    chatbotVision: chatbotMetadata.capabilities.vision === true &&
+      chatbotMetadata.tools.inspect_current_conversation === true,
     chatbotWebMaxChars: positiveNumber(source.CHATBOT_WEB_MAX_CHARS, 8_000),
     chatbotWebMaxCalls: Math.min(5, positiveNumber(source.CHATBOT_WEB_MAX_CALLS, 3)),
     chatbotContextMessages: Math.floor(positiveNumber(source.CHATBOT_CONTEXT_MESSAGES, 1)),

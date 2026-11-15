@@ -25,7 +25,6 @@ Copy `.env.example` to `.env` and edit the values below. The watcher reloads the
 | `CHATBOT_API_URL` | OpenAI-compatible URL, ending in `/v1` or `/v1/chat/completions` | Required when `REPLY_MODE=chatbot`; `/v1` is expanded automatically. |
 | `CHATBOT_API_KEY` | Token or empty | Optional bearer token for the chatbot endpoint. |
 | `CHATBOT_MODEL` | Model name | Model sent to the chatbot endpoint. |
-| `CHATBOT_VISION` | `true` or `false` | Enables the `inspect_current_conversation` screenshot tool for vision-capable models; default `false`. |
 | `CHATBOT_VERBOSE_LOGGING` | `true` or `false` | Logs chatbot composition, tool use, success, and fallback errors; default `true`. |
 | `CHATBOT_RESCAN_BEFORE_REPLY` | `true` or `false` | Forces one fresh conversation rescan before generation; default `false`. |
 | `CHATBOT_TEMPERATURE` | Number, normally `0` to `2` | Generation randomness. |
@@ -34,7 +33,6 @@ Copy `.env.example` to `.env` and edit the values below. The watcher reloads the
 | `CHATBOT_CACHE_MAX_CHARS` | Positive number | Cache size threshold that triggers summarization and replacement. |
 | `CHATBOT_CACHE_COMPRESSION` | `true` or `false` | Enables gzip cache files; `false` writes readable JSON files. |
 | `CHATBOT_RESCAN_DUMP_DIRECTORY` | Relative or absolute directory | Directory for readable text dumps of each conversation rescan. |
-| `CHATBOT_WEB_ACCESS` | `true` or `false` | Enables the chatbot's `web_search` and `fetch_url` tools; default `false`. |
 | `CHATBOT_WEB_MAX_CHARS` | Positive number | Maximum characters returned from each web tool; default `8000`. |
 | `CHATBOT_WEB_MAX_CALLS` | Positive number, capped at 5 | Maximum web-tool calls per reply; default `3`. |
 | `rescan_conversation` | Chatbot tool | Lets the model rescan the currently open Messenger conversation when cached context is insufficient. |
@@ -42,6 +40,10 @@ Copy `.env.example` to `.env` and edit the values below. The watcher reloads the
 | `CHATBOT_SYSTEM_PROMPT` | Any text | System instruction for generated replies. The current sender and incoming message are added separately for every request. |
 | `MESSAGE_SELECTOR` | CSS selector | Selector for rendered message elements; Facebook may change this. |
 | `COMPOSER_SELECTOR` | CSS selector for a textarea/contenteditable | Selector used to type replies. |
+
+## Model metadata
+
+The selected `CHATBOT_MODEL` loads its capabilities and permitted tools from `.ai-metadata/<model>.info`. Windows-safe filenames replace characters such as `:` with `_`; for example, `qwen3.5:9b` uses `.ai-metadata/qwen3.5_9b.info`. Web access and vision are enabled only when both the model capability and the corresponding tool are declared in metadata.
 
 ## Account and mention detection
 

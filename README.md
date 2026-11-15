@@ -48,7 +48,7 @@ By default, replies use `REPLY_TEXT`. To generate replies with a chatbot, set `R
 Chatbot conversation context is cached per conversation under `.cache/`. `CHATBOT_CACHE_COMPRESSION=false` keeps cache files readable as JSON. On the initial cache, the newest `CHATBOT_CONTEXT_MESSAGES` actual Messenger messages are stored (so `20` produces 20 conversation exchanges when available); a confirmed assistant reply is added afterward. Caches exceeding `CHATBOT_CACHE_MAX_CHARS` are summarized for important facts, questions, commitments, dates, and chronology before replacement.
 If the initial context does not contain the subject, the chatbot can use `rescan_conversation` to fetch older windows: 21–40, then 41–60, then 61–80 when needed.
 
-For Ollama models that support tool calling, set `CHATBOT_WEB_ACCESS=true`. The assistant can then search DuckDuckGo and fetch public web pages. Set `CHATBOT_VISION=true` for a vision-capable model to enable the `inspect_current_conversation` tool, which captures the open Messenger view when visual inspection is needed. Tool access is off by default; calls are limited and private/local network URLs are blocked.
+Model capabilities and available tools are configured in `.ai-metadata/<model>.info`. The included `qwen3.5_9b.info` enables web search, URL fetching, conversation rescanning, and vision inspection for `qwen3.5:9b`. Tool access is model-specific; calls are limited and private/local network URLs are blocked.
 
 ## Setup
 

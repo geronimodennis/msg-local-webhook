@@ -1,0 +1,16 @@
+{
+  "model": "qwen3.5:9b",
+  "provider": "ollama",
+  "capabilities": {
+    "tool_calling": true,
+    "vision": true,
+    "text": true
+  },
+  "tools": {
+    "web_search": true,
+    "fetch_url": true,
+    "rescan_conversation": true,
+    "inspect_current_conversation": true
+  },
+  "notes": "Filename uses an underscore because Windows filenames cannot contain a colon."
+}

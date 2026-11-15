@@ -28,6 +28,13 @@ test("idle policy is configurable in seconds or minutes", () => {
   assert.equal(loadConfig({ IDLE_VALUE: "2", IDLE_UNIT: "minutes" }).idleMs, 120_000);
 });
 
+test("model metadata controls chatbot capabilities and tools", () => {
+  const config = loadConfig({ CHATBOT_MODEL: "qwen3.5:9b" });
+  assert.equal(config.chatbotVision, true);
+  assert.equal(config.chatbotWebAccess, true);
+  assert.equal(loadConfig({ CHATBOT_MODEL: "unknown-model" }).chatbotVision, false);
+});
+
 test("conversation cache retains twenty distinct context messages with compact keys", async () => {
   const directory = await mkdtemp(join(tmpdir(), "msg-local-webhook-cache-"));
   try {
